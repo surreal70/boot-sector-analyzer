@@ -1,0 +1,4 @@
+# file: /home/andreas/kiro/boot-sector-analyzer/boot_sector_analyzer/security_scanner.py
+# hypothesis_version: 6.148.11
+
+[b'\x0f\x01\x15', b'\x0f\x01\x16', b'\x0f\x01\x1d', b'\x0f\x05', b'\x0f \xc0', b'\x0f"\xc0', b'\x0f"\xd8', b'\x0f1', b'0', b'1', b'1\xc0\x8e\xd8\x8e\xc0', b'UPX!', b'`\xe8\x00\x00\x00\x00', b'd\x8b', b'\x80\xf0', b'\xc6\x06', b'\xc7\x06', b'\xcd.', b'\xcd\x80', b'\xeb\x10ZJ', b'\xfa\xfc1\xc0', 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 6.5, 7.5, 119, 128, 255, 'Advanced.Rootkit.C', 'Generic.Bootkit.A', 'MBR.Hijacker.B', 'RDTSC (timing check)', 'SYSCALL instruction', 'UPX packer signature', 'anti_debugging', 'critical', 'hidden_partition', 'high', 'high_entropy', 'interrupt_hooking', 'local_database', 'malware', 'md5', 'medium_entropy', 'memory_manipulation', 'packer_signature', 'partition_overlap', 'privilege_escalation', 'self_modifying_code', 'sha256', 'shellcode_pattern', 'signature_match', 'syscall_hooking', 'xor_obfuscation']

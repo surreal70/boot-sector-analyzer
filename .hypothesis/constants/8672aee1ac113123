@@ -1,0 +1,4 @@
+# file: /home/andreas/kiro/boot-sector-analyzer/boot_sector_analyzer/internet_checker.py
+# hypothesis_version: 6.148.11
+
+[200, '*.json', 'NotFoundError', 'QuotaExceededError', 'User-Agent', 'cache', 'cached_at', 'category', 'detected', 'detection_count', 'detections', 'engine_name', 'hash_value', 'last_analysis_date', 'malicious', 'not_found', 'permalink', 'r', 'result', 'scan_date', 'suspicious', 'total_engines', 'w']

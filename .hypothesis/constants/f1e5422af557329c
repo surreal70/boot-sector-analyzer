@@ -1,0 +1,4 @@
+# file: /home/andreas/kiro/boot-sector-analyzer/boot_sector_analyzer/exceptions.py
+# hypothesis_version: 6.148.11
+
+[130, 'analysis_error', 'configuration_error', 'error_details', 'file_not_found', 'general_error', 'input_error', 'interrupted', 'network_error', 'parsing_error', 'permission_error', 'success']

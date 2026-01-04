@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Partition Type Identifiers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .id-column {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            text-align: center;
+            width: 80px;
+        }
+        .name-column {
+            font-weight: bold;
+            width: 300px;
+        }
+        .description-column {
+            line-height: 1.4;
+        }
+        .source-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4f8;
+            border-left: 4px solid #2196F3;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PC Partition Type Identifiers</h1>
+        <p>This table contains partition identifiers (system indicators) for various operating systems, file systems, boot managers, and other utilities used on PC systems.</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th class="id-column">ID</th>
+                    <th class="name-column">Name</th>
+                    <th class="description-column">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="id-column">00</td>
+                    <td class="name-column">Empty</td>
+                    <td class="description-column">Not used to designate unused area on the disk, but marks an unused partition table entry. All other fields should be zero as well.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">01</td>
+                    <td class="name-column">DOS 12-bit FAT</td>
+                    <td class="description-column">DOS family of single-user operating systems for PCs. Type 01 is for partitions smaller than 16 MB.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">02</td>
+                    <td class="name-column">XENIX root</td>
+                    <td class="description-column">Xenix is an old port of Unix V7. Microsoft Xenix OS was announced August 1980.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">03</td>
+                    <td class="name-column">XENIX /usr</td>
+                    <td class="description-column">Xenix /usr partition for the old Unix V7 port.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">04</td>
+                    <td class="name-column">DOS 3.0+ 16-bit FAT (up to 32M)</td>
+                    <td class="description-column">DOS 3.0+ 16-bit FAT partition up to 32MB. Some old DOS versions require this partition to be in the first physical 32 MB.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">05</td>
+                    <td class="name-column">DOS 3.3+ Extended Partition</td>
+                    <td class="description-column">Supports at most 8.4 GB disks. Extended partition containing a linked list of logical partitions.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">06</td>
+                    <td class="name-column">DOS 3.31+ 16-bit FAT (over 32M)</td>
+                    <td class="description-column">DOS 3.31+ 16-bit FAT partition over 32MB. Partitions are at most 2 GB for DOS and Windows 95/98.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">07</td>
+                    <td class="name-column">OS/2 IFS (e.g., HPFS)</td>
+                    <td class="description-column">Installable File System. Also used for Windows NT NTFS, exFAT, Advanced Unix, and QNX2.x pre-1988.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">08</td>
+                    <td class="name-column">OS/2 (v1.0-1.3 only)</td>
+                    <td class="description-column">Also used for AIX boot partition, SplitDrive, Commodore DOS, DELL partition spanning multiple drives, and QNX 1.x and 2.x.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">09</td>
+                    <td class="name-column">AIX data partition</td>
+                    <td class="description-column">IBM's version of Unix. Also used for Coherent filesystem and QNX 1.x and 2.x.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">0a</td>
+                    <td class="name-column">OS/2 Boot Manager</td>
+                    <td class="description-column">OS/2 Boot Manager. Also used for Coherent swap partition and OPUS (Open Parallel Unisys Server).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">0b</td>
+                    <td class="name-column">WIN95 OSR2 FAT32</td>
+                    <td class="description-column">Windows 95 OSR2 FAT32 partitions up to 2047GB.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">0c</td>
+                    <td class="name-column">WIN95 OSR2 FAT32, LBA-mapped</td>
+                    <td class="description-column">Extended-INT13 equivalent of 0b.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">0d</td>
+                    <td class="name-column">SILICON SAFE</td>
+                    <td class="description-column">Planned by siliconsafe.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">0e</td>
+                    <td class="name-column">WIN95: DOS 16-bit FAT, LBA-mapped</td>
+                    <td class="description-column">Windows 95 DOS 16-bit FAT with LBA mapping.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">0f</td>
+                    <td class="name-column">WIN95: Extended partition, LBA-mapped</td>
+                    <td class="description-column">Windows 95 Extended partition with LBA mapping. Extended-INT13 equivalent of 05.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">10</td>
+                    <td class="name-column">OPUS (?)</td>
+                    <td class="description-column">Maybe decimal, for type 0a.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">11</td>
+                    <td class="name-column">Hidden DOS 12-bit FAT</td>
+                    <td class="description-column">OS/2 Boot Manager hides primary DOS partitions by changing ID. Also Leading Edge DOS 3.x logically sectored FAT.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">12</td>
+                    <td class="name-column">Configuration/diagnostics partition</td>
+                    <td class="description-column">Used by Compaq for configuration utility partition, hibernation partition, NCR diagnostics, Intel Service Partition, and IBM Rescue and Recovery.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">14</td>
+                    <td class="name-column">Hidden DOS 16-bit FAT &lt;32M</td>
+                    <td class="description-column">Hidden DOS 16-bit FAT partition less than 32MB. Also AST DOS with logically sectored FAT.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">16</td>
+                    <td class="name-column">Hidden DOS 16-bit FAT &gt;=32M</td>
+                    <td class="description-column">Hidden DOS 16-bit FAT partition 32MB or larger.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">17</td>
+                    <td class="name-column">Hidden IFS (e.g., HPFS)</td>
+                    <td class="description-column">Hidden Installable File System (e.g., HPFS).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">18</td>
+                    <td class="name-column">AST SmartSleep Partition</td>
+                    <td class="description-column">Ascentia laptops Zero Volt Suspend Partition or SmartSleep Partition of size 2MB+memory size.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">19</td>
+                    <td class="name-column">Unused</td>
+                    <td class="description-column">Claimed for Willowtech Photon coS (completely optimized system).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">1b</td>
+                    <td class="name-column">Hidden WIN95 OSR2 FAT32</td>
+                    <td class="description-column">Hidden Windows 95 OSR2 FAT32 partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">1c</td>
+                    <td class="name-column">Hidden WIN95 OSR2 FAT32, LBA-mapped</td>
+                    <td class="description-column">Hidden Windows 95 OSR2 FAT32 with LBA mapping. Sometimes a hidden IBM rescue partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">1e</td>
+                    <td class="name-column">Hidden WIN95 16-bit FAT, LBA-mapped</td>
+                    <td class="description-column">Hidden Windows 95 16-bit FAT with LBA mapping.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">20</td>
+                    <td class="name-column">Unused</td>
+                    <td class="description-column">Rumoured to be used by Willowsoft Overture File System (OFS1).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">21</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">HP Volume Expansion, SpeedStor variant. Also claimed for FSo2 (Oxygen File System).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">22</td>
+                    <td class="name-column">Unused</td>
+                    <td class="description-column">Claimed for Oxygen Extended Partition Table.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">23</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">Reserved partition type.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">24</td>
+                    <td class="name-column">NEC DOS 3.x</td>
+                    <td class="description-column">NEC MS-DOS 3.30 logically sectored FAT. MBR could have up to 8 partition entries.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">26</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">Reserved partition type.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">27</td>
+                    <td class="name-column">PQservice</td>
+                    <td class="description-column">Acer laptop hidden rescue partition (FAT32 or NTFS). Also Windows RE hidden partition, MirOS partition, and RouterBOOT kernel partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">2a</td>
+                    <td class="name-column">AtheOS File System (AFS)</td>
+                    <td class="description-column">AtheOS/Syllable OS filesystem, an extension of BeFS.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">2b</td>
+                    <td class="name-column">SyllableSecure (SylStor)</td>
+                    <td class="description-column">A variation on AthFS with added security.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">31</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">Reserved partition type.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">32</td>
+                    <td class="name-column">NOS</td>
+                    <td class="description-column">Operating system being developed by Alien Internet Services in Melbourne Australia.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">33</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">Reserved partition type.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">34</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">Reserved partition type.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">35</td>
+                    <td class="name-column">JFS on OS/2 or eCS</td>
+                    <td class="description-column">OS/2 Warp Server for e-Business and eComStation implementation of JFS (IBM AIX Journaling Filesystem).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">36</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">Reserved partition type.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">38</td>
+                    <td class="name-column">THEOS ver 3.2 2gb partition</td>
+                    <td class="description-column">THEOS multiuser multitasking OS version 3.2 2GB partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">39</td>
+                    <td class="name-column">Plan 9 partition</td>
+                    <td class="description-column">Plan 9 operating system partition. Also THEOS ver 4 spanned partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">3a</td>
+                    <td class="name-column">THEOS ver 4 4gb partition</td>
+                    <td class="description-column">THEOS version 4 4GB partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">3b</td>
+                    <td class="name-column">THEOS ver 4 extended partition</td>
+                    <td class="description-column">THEOS version 4 extended partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">3c</td>
+                    <td class="name-column">PartitionMagic recovery partition</td>
+                    <td class="description-column">PowerQuest PartitionMagic recovery partition used during disk operations.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">3d</td>
+                    <td class="name-column">Hidden NetWare</td>
+                    <td class="description-column">Hidden Novell NetWare partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">40</td>
+                    <td class="name-column">Venix 80286</td>
+                    <td class="description-column">Very old Unix-like operating system for PCs. Also PICK multi-user operating system.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">41</td>
+                    <td class="name-column">Linux/MINIX (sharing disk with DRDOS)</td>
+                    <td class="description-column">Old recommendation for Linux/MINIX on disks shared with DRDOS. Also Personal RISC Boot and PPC PReP Boot.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">42</td>
+                    <td class="name-column">Linux swap (sharing disk with DRDOS)</td>
+                    <td class="description-column">Linux swap partition on disks shared with DRDOS. Also SFS (Secure Filesystem) and Windows 2000 dynamic extended partition marker.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">43</td>
+                    <td class="name-column">Linux native (sharing disk with DRDOS)</td>
+                    <td class="description-column">Linux native partition on disks shared with DRDOS.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">44</td>
+                    <td class="name-column">GoBack partition</td>
+                    <td class="description-column">GoBack utility partition that records disk changes for rollback capability.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">45</td>
+                    <td class="name-column">Boot-US boot manager</td>
+                    <td class="description-column">Boot-US boot manager partition. Also Priam and EUMEL/Elan.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">46</td>
+                    <td class="name-column">EUMEL/Elan</td>
+                    <td class="description-column">EUMEL/Elan multiuser multitasking system partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">47</td>
+                    <td class="name-column">EUMEL/Elan</td>
+                    <td class="description-column">EUMEL/Elan multiuser multitasking system partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">48</td>
+                    <td class="name-column">EUMEL/Elan</td>
+                    <td class="description-column">EUMEL/Elan multiuser multitasking system partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">4a</td>
+                    <td class="name-column">Mark Aitchison's ALFS/THIN lightweight filesystem for DOS</td>
+                    <td class="description-column">ALFS/THIN lightweight filesystem. Also AdaOS Aquila (Withdrawn).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">4c</td>
+                    <td class="name-column">Oberon partition</td>
+                    <td class="description-column">Aos (now A2) filesystem partition for Oberon operating system.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">4d</td>
+                    <td class="name-column">QNX4.x</td>
+                    <td class="description-column">QNX4.x first partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">4e</td>
+                    <td class="name-column">QNX4.x 2nd part</td>
+                    <td class="description-column">QNX4.x second partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">4f</td>
+                    <td class="name-column">QNX4.x 3rd part</td>
+                    <td class="description-column">QNX4.x third partition. Also Oberon partition for Nat filesystem.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">50</td>
+                    <td class="name-column">OnTrack Disk Manager (older versions) RO</td>
+                    <td class="description-column">OnTrack Disk Manager read-only partition. Also Lynx RTOS and Native Oberon.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">51</td>
+                    <td class="name-column">OnTrack Disk Manager RW (DM6 Aux1)</td>
+                    <td class="description-column">OnTrack Disk Manager read-write partition. Also Novell.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">52</td>
+                    <td class="name-column">CP/M</td>
+                    <td class="description-column">CP/M operating system. Also Microport SysV/AT.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">53</td>
+                    <td class="name-column">Disk Manager 6.0 Aux3</td>
+                    <td class="description-column">OnTrack Disk Manager 6.0 Auxiliary partition 3.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">54</td>
+                    <td class="name-column">Disk Manager 6.0 Dynamic Drive Overlay (DDO)</td>
+                    <td class="description-column">OnTrack Disk Manager 6.0 Dynamic Drive Overlay.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">55</td>
+                    <td class="name-column">EZ-Drive</td>
+                    <td class="description-column">MicroHouse EZ-Drive disk manager partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">56</td>
+                    <td class="name-column">Golden Bow VFeature Partitioned Volume</td>
+                    <td class="description-column">Non-Standard DOS Volume. Also DM converted to EZ-BIOS and AT&T MS-DOS 3.x logically sectored FAT.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">57</td>
+                    <td class="name-column">DrivePro</td>
+                    <td class="description-column">StorageSoft DrivePro partition. Also VNDI Partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">5c</td>
+                    <td class="name-column">Priam EDisk</td>
+                    <td class="description-column">Priam EDisk Partitioned Volume (Non-Standard DOS Volume).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">61</td>
+                    <td class="name-column">SpeedStor</td>
+                    <td class="description-column">Storage Dimensions SpeedStor Volume (Non-Standard DOS Volume).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">63</td>
+                    <td class="name-column">Unix System V (SCO, ISC Unix, UnixWare, ...)</td>
+                    <td class="description-column">Unix System V, Mach, GNU Hurd. UnixWare 7.1 partition must start below 4GB limit.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">64</td>
+                    <td class="name-column">PC-ARMOUR protected partition</td>
+                    <td class="description-column">PC-ARMOUR disk protection partition. Also Novell Netware 286, 2.xx.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">65</td>
+                    <td class="name-column">Novell Netware 386, 3.xx or 4.xx</td>
+                    <td class="description-column">Novell Netware 386 partition using Turbo FAT filesystem.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">66</td>
+                    <td class="name-column">Novell Netware SMS Partition</td>
+                    <td class="description-column">Novell Netware Storage Management Services partition (no longer used).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">67</td>
+                    <td class="name-column">Novell</td>
+                    <td class="description-column">Novell partition (Wolf Mountain).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">68</td>
+                    <td class="name-column">Novell</td>
+                    <td class="description-column">Novell partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">69</td>
+                    <td class="name-column">Novell Netware 5+, Novell Netware NSS Partition</td>
+                    <td class="description-column">Novell Netware 5+ NSS (Novell Storage Services) partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">6e</td>
+                    <td class="name-column">??</td>
+                    <td class="description-column">Unknown partition type, reported once.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">70</td>
+                    <td class="name-column">DiskSecure Multi-Boot</td>
+                    <td class="description-column">DiskSecure Multi-Boot partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">71</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">Reserved partition type.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">72</td>
+                    <td class="name-column">V7/x86</td>
+                    <td class="description-column">V7/x86, a port of UNIX Version 7 to the PC.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">73</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">Reserved partition type.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">74</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">Reserved partition type. Also Scramdisk partition for disk encryption software.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">75</td>
+                    <td class="name-column">IBM PC/IX</td>
+                    <td class="description-column">IBM PC/IX partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">76</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">Reserved partition type.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">77</td>
+                    <td class="name-column">M2FS/M2CS partition</td>
+                    <td class="description-column">M2FS/M2CS partition. Also VNDI Partition (not in actual use).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">78</td>
+                    <td class="name-column">XOSL FS</td>
+                    <td class="description-column">XOSL Bootloader filesystem.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">7e</td>
+                    <td class="name-column">Unused</td>
+                    <td class="description-column">Claimed for F.I.X.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">7f</td>
+                    <td class="name-column">Unused</td>
+                    <td class="description-column">Proposed for the Alt-OS-Development Partition Standard.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">80</td>
+                    <td class="name-column">MINIX until 1.4a</td>
+                    <td class="description-column">MINIX operating system until version 1.4a.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">81</td>
+                    <td class="name-column">MINIX since 1.4b, early Linux</td>
+                    <td class="description-column">MINIX since version 1.4b and early Linux. Also Mitac disk manager.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">82</td>
+                    <td class="name-column">Prime</td>
+                    <td class="description-column">Prime partition. Also Solaris x86 and Linux swap.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">83</td>
+                    <td class="name-column">Linux native partition</td>
+                    <td class="description-column">Linux native partition supporting various filesystem types (ext2, ext3, reiserfs, etc.).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">84</td>
+                    <td class="name-column">OS/2 hidden C: drive</td>
+                    <td class="description-column">OS/2-renumbered type 04 partition. Also Hibernation partition for laptops.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">85</td>
+                    <td class="name-column">Linux extended partition</td>
+                    <td class="description-column">Linux extended partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">86</td>
+                    <td class="name-column">Old Linux RAID partition superblock</td>
+                    <td class="description-column">Old Linux RAID partition. Also FAT16 volume set (Legacy Fault Tolerant).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">87</td>
+                    <td class="name-column">NTFS volume set</td>
+                    <td class="description-column">Legacy Fault Tolerant NTFS volume or HPFS Fault-Tolerant mirrored partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">88</td>
+                    <td class="name-column">Linux plaintext partition table</td>
+                    <td class="description-column">Linux plaintext partition table.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">8a</td>
+                    <td class="name-column">Linux Kernel Partition (used by AiR-BOOT)</td>
+                    <td class="description-column">Linux Kernel Partition used by AiR-BOOT boot loader.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">8b</td>
+                    <td class="name-column">Legacy Fault Tolerant FAT32 volume</td>
+                    <td class="description-column">Legacy Fault Tolerant FAT32 volume.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">8c</td>
+                    <td class="name-column">Legacy Fault Tolerant FAT32 volume using BIOS extd INT 13h</td>
+                    <td class="description-column">Legacy Fault Tolerant FAT32 volume using BIOS extended INT 13h.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">8d</td>
+                    <td class="name-column">Free FDISK 0.96+ hidden Primary DOS FAT12 partitition</td>
+                    <td class="description-column">Free FDISK hidden Primary DOS FAT12 partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">8e</td>
+                    <td class="name-column">Linux Logical Volume Manager partition</td>
+                    <td class="description-column">Linux LVM (Logical Volume Manager) partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">90</td>
+                    <td class="name-column">Free FDISK 0.96+ hidden Primary DOS FAT16 partitition</td>
+                    <td class="description-column">Free FDISK hidden Primary DOS FAT16 partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">91</td>
+                    <td class="name-column">Free FDISK 0.96+ hidden DOS extended partitition</td>
+                    <td class="description-column">Free FDISK hidden DOS extended partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">92</td>
+                    <td class="name-column">Free FDISK 0.96+ hidden Primary DOS large FAT16 partitition</td>
+                    <td class="description-column">Free FDISK hidden Primary DOS large FAT16 partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">93</td>
+                    <td class="name-column">Hidden Linux native partition</td>
+                    <td class="description-column">Hidden Linux native partition. Also Amoeba.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">94</td>
+                    <td class="name-column">Amoeba bad block table</td>
+                    <td class="description-column">Amoeba distributed operating system bad block table.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">95</td>
+                    <td class="name-column">MIT EXOPC native partitions</td>
+                    <td class="description-column">MIT EXOPC native partitions.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">96</td>
+                    <td class="name-column">CHRP ISO-9660 filesystem</td>
+                    <td class="description-column">CHRP (Common Hardware Reference Platform) ISO-9660 filesystem.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">97</td>
+                    <td class="name-column">Free FDISK 0.96+ hidden Primary DOS FAT32 partitition</td>
+                    <td class="description-column">Free FDISK hidden Primary DOS FAT32 partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">98</td>
+                    <td class="name-column">Free FDISK 0.96+ hidden Primary DOS FAT32 partitition (LBA)</td>
+                    <td class="description-column">Free FDISK hidden Primary DOS FAT32 partition with LBA. Also Datalight ROM-DOS Super-Boot Partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">99</td>
+                    <td class="name-column">DCE376 logical drive</td>
+                    <td class="description-column">Mylex DCE376 EISA SCSI adaptor logical drive for partitions beyond 1024th cylinder.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">9a</td>
+                    <td class="name-column">Free FDISK 0.96+ hidden Primary DOS FAT16 partitition (LBA)</td>
+                    <td class="description-column">Free FDISK hidden Primary DOS FAT16 partition with LBA.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">9b</td>
+                    <td class="name-column">Free FDISK 0.96+ hidden DOS extended partitition (LBA)</td>
+                    <td class="description-column">Free FDISK hidden DOS extended partition with LBA.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">9e</td>
+                    <td class="name-column">ForthOS partition</td>
+                    <td class="description-column">ForthOS partition (Forth operating system). Also older VSTA.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">9f</td>
+                    <td class="name-column">BSD/OS</td>
+                    <td class="description-column">Current BSD/OS partition type (BSDI).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">a0</td>
+                    <td class="name-column">Laptop hibernation partition</td>
+                    <td class="description-column">Hibernation partition for various laptops (IBM Thinkpad, Phoenix NoteBIOS, Toshiba, Sony VAIO).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">a1</td>
+                    <td class="name-column">Laptop hibernation partition</td>
+                    <td class="description-column">Save-to-Disk partition on NEC 6000H notebook. Also HP Volume Expansion (SpeedStor variant).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">a3</td>
+                    <td class="name-column">HP Volume Expansion (SpeedStor variant)</td>
+                    <td class="description-column">HP Volume Expansion using SpeedStor variant.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">a4</td>
+                    <td class="name-column">HP Volume Expansion (SpeedStor variant)</td>
+                    <td class="description-column">HP Volume Expansion using SpeedStor variant.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">a5</td>
+                    <td class="name-column">BSD/386, 386BSD, NetBSD, FreeBSD</td>
+                    <td class="description-column">BSD family operating systems partition (386BSD, FreeBSD, NetBSD).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">a6</td>
+                    <td class="name-column">OpenBSD</td>
+                    <td class="description-column">OpenBSD partition. Also HP Volume Expansion (SpeedStor variant).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">a7</td>
+                    <td class="name-column">NeXTStep</td>
+                    <td class="description-column">NeXTStep object-oriented operating system based on Mach.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">a8</td>
+                    <td class="name-column">Mac OS-X</td>
+                    <td class="description-column">Apple's OS-X (Darwin Intel) UFS filesystem partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">a9</td>
+                    <td class="name-column">NetBSD</td>
+                    <td class="description-column">NetBSD partition (changed from a5 since Feb 19, 1998).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">aa</td>
+                    <td class="name-column">Olivetti Fat 12 1.44MB Service Partition</td>
+                    <td class="description-column">Olivetti service partition with DOS 6.22 and utility to exchange types 06 and aa.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">ab</td>
+                    <td class="name-column">Mac OS-X Boot partition</td>
+                    <td class="description-column">Apple's OS-X (Darwin Intel) boot partition. Also GO! partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">ad</td>
+                    <td class="name-column">RISC OS ADFS</td>
+                    <td class="description-column">RISC OS ADFS (Advanced Disc Filing System) in FileCore format.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">ae</td>
+                    <td class="name-column">ShagOS filesystem</td>
+                    <td class="description-column">ShagOS filesystem partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">af</td>
+                    <td class="name-column">ShagOS swap partition</td>
+                    <td class="description-column">ShagOS swap partition. Also MacOS X HFS/HFS+ on Intel.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">b0</td>
+                    <td class="name-column">BootStar Dummy</td>
+                    <td class="description-column">BootStar boot manager dummy partition for unused MBR entries.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">b1</td>
+                    <td class="name-column">HP Volume Expansion (SpeedStor variant)</td>
+                    <td class="description-column">HP Volume Expansion using SpeedStor variant. Also QNX Neutrino Power-Safe filesystem.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">b2</td>
+                    <td class="name-column">QNX Neutrino Power-Safe filesystem</td>
+                    <td class="description-column">QNX Neutrino Power-Safe filesystem.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">b3</td>
+                    <td class="name-column">HP Volume Expansion (SpeedStor variant)</td>
+                    <td class="description-column">HP Volume Expansion using SpeedStor variant. Also QNX Neutrino Power-Safe filesystem (default).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">b4</td>
+                    <td class="name-column">HP Volume Expansion (SpeedStor variant)</td>
+                    <td class="description-column">HP Volume Expansion using SpeedStor variant.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">b6</td>
+                    <td class="name-column">HP Volume Expansion (SpeedStor variant)</td>
+                    <td class="description-column">HP Volume Expansion using SpeedStor variant. Also Corrupted Windows NT mirror set (master), FAT16.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">b7</td>
+                    <td class="name-column">Corrupted Windows NT mirror set (master), NTFS file system</td>
+                    <td class="description-column">Corrupted Windows NT mirror set with NTFS. Also BSDI BSD/386 filesystem.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">b8</td>
+                    <td class="name-column">BSDI BSD/386 swap partition</td>
+                    <td class="description-column">BSDI BSD/386 swap partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">bb</td>
+                    <td class="name-column">Boot Wizard hidden</td>
+                    <td class="description-column">BootWizard 4.0 and Acronis OS Selector 5.0 hidden partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">bc</td>
+                    <td class="name-column">Acronis backup partition</td>
+                    <td class="description-column">Acronis Secure Zone backup partition (FAT32, LBA mapped).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">bd</td>
+                    <td class="name-column">BonnyDOS/286</td>
+                    <td class="description-column">BonnyDOS/286 partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">be</td>
+                    <td class="name-column">Solaris 8 boot partition</td>
+                    <td class="description-column">Solaris 8 boot partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">bf</td>
+                    <td class="name-column">New Solaris x86 partition</td>
+                    <td class="description-column">New Solaris x86 partition (replaces conflicting 0x82).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">c0</td>
+                    <td class="name-column">CTOS</td>
+                    <td class="description-column">CTOS partition. Also REAL/32 secure small partition, NTFT Partition, and DR-DOS/Novell DOS secured partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">c1</td>
+                    <td class="name-column">DRDOS/secured (FAT-12)</td>
+                    <td class="description-column">DR-DOS secured FAT-12 partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">c2</td>
+                    <td class="name-column">Unused</td>
+                    <td class="description-column">Reserved for DR-DOS 7+. Also Hidden Linux.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">c3</td>
+                    <td class="name-column">Hidden Linux swap</td>
+                    <td class="description-column">Hidden Linux swap partition used by Power Boot boot manager.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">c4</td>
+                    <td class="name-column">DRDOS/secured (FAT-16, &lt; 32M)</td>
+                    <td class="description-column">DR-DOS secured FAT-16 partition less than 32MB.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">c5</td>
+                    <td class="name-column">DRDOS/secured (extended)</td>
+                    <td class="description-column">DR-DOS secured extended partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">c6</td>
+                    <td class="name-column">DRDOS/secured (FAT-16, &gt;= 32M)</td>
+                    <td class="description-column">DR-DOS secured FAT-16 partition 32MB or larger. Also Windows NT corrupted FAT16 volume/stripe set.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">c7</td>
+                    <td class="name-column">Windows NT corrupted NTFS volume/stripe set</td>
+                    <td class="description-column">Windows NT corrupted NTFS volume/stripe set. Also Syrinx boot.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">c8</td>
+                    <td class="name-column">Reserved for DR-DOS 8.0+</td>
+                    <td class="description-column">Reserved for DR-DOS 8.0 and later versions.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">c9</td>
+                    <td class="name-column">Reserved for DR-DOS 8.0+</td>
+                    <td class="description-column">Reserved for DR-DOS 8.0 and later versions.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">ca</td>
+                    <td class="name-column">Reserved for DR-DOS 8.0+</td>
+                    <td class="description-column">Reserved for DR-DOS 8.0 and later versions.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">cb</td>
+                    <td class="name-column">DR-DOS 7.04+ secured FAT32 (CHS)/</td>
+                    <td class="description-column">DR-DOS 7.04+ secured FAT32 with CHS addressing.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">cc</td>
+                    <td class="name-column">DR-DOS 7.04+ secured FAT32 (LBA)/</td>
+                    <td class="description-column">DR-DOS 7.04+ secured FAT32 with LBA addressing.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">cd</td>
+                    <td class="name-column">CTOS Memdump?</td>
+                    <td class="description-column">CTOS memory dump partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">ce</td>
+                    <td class="name-column">DR-DOS 7.04+ FAT16X (LBA)/</td>
+                    <td class="description-column">DR-DOS 7.04+ FAT16X with LBA addressing.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">cf</td>
+                    <td class="name-column">DR-DOS 7.04+ secured EXT DOS (LBA)/</td>
+                    <td class="description-column">DR-DOS 7.04+ secured extended DOS with LBA addressing.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">d0</td>
+                    <td class="name-column">REAL/32 secure big partition</td>
+                    <td class="description-column">REAL/32 secure partition 32MB or larger. Also Multiuser DOS secured partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">d1</td>
+                    <td class="name-column">Old Multiuser DOS secured FAT12</td>
+                    <td class="description-column">Old Multiuser DOS secured FAT12 partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">d4</td>
+                    <td class="name-column">Old Multiuser DOS secured FAT16 &lt;32M</td>
+                    <td class="description-column">Old Multiuser DOS secured FAT16 partition less than 32MB.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">d5</td>
+                    <td class="name-column">Old Multiuser DOS secured extended partition</td>
+                    <td class="description-column">Old Multiuser DOS secured extended partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">d6</td>
+                    <td class="name-column">Old Multiuser DOS secured FAT16 &gt;=32M</td>
+                    <td class="description-column">Old Multiuser DOS secured FAT16 partition 32MB or larger.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">d8</td>
+                    <td class="name-column">CP/M-86</td>
+                    <td class="description-column">CP/M-86 operating system partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">da</td>
+                    <td class="name-column">Non-FS Data</td>
+                    <td class="description-column">Non-filesystem data partition. Also Powercopy Backup (shielded disk).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">db</td>
+                    <td class="name-column">Digital Research CP/M, Concurrent CP/M, Concurrent DOS</td>
+                    <td class="description-column">Digital Research CP/M family. Also CTOS and KDG Telemetry SCPU boot.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">dd</td>
+                    <td class="name-column">Hidden CTOS Memdump?</td>
+                    <td class="description-column">Hidden CTOS memory dump partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">de</td>
+                    <td class="name-column">Dell PowerEdge Server utilities (FAT fs)</td>
+                    <td class="description-column">Dell PowerEdge Server utilities with FAT filesystem.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">df</td>
+                    <td class="name-column">DG/UX virtual disk manager partition</td>
+                    <td class="description-column">DG/UX virtual disk manager partition. Also BootIt EMBRM.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">e0</td>
+                    <td class="name-column">Reserved by STMicroelectronics for a filesystem called ST AVFS</td>
+                    <td class="description-column">Reserved by STMicroelectronics for ST AVFS filesystem.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">e1</td>
+                    <td class="name-column">DOS access or SpeedStor 12-bit FAT extended partition</td>
+                    <td class="description-column">DOS access or SpeedStor 12-bit FAT extended partition on cylinders &gt; 1023.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">e3</td>
+                    <td class="name-column">DOS R/O or SpeedStor</td>
+                    <td class="description-column">DOS read-only or SpeedStor partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">e4</td>
+                    <td class="name-column">SpeedStor 16-bit FAT extended partition &lt; 1024 cyl.</td>
+                    <td class="description-column">SpeedStor 16-bit FAT extended partition less than 1024 cylinders.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">e5</td>
+                    <td class="name-column">Tandy MSDOS with logically sectored FAT</td>
+                    <td class="description-column">Tandy MS-DOS with logically sectored FAT.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">e6</td>
+                    <td class="name-column">Storage Dimensions SpeedStor</td>
+                    <td class="description-column">Storage Dimensions SpeedStor partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">e8</td>
+                    <td class="name-column">LUKS</td>
+                    <td class="description-column">LUKS (Linux Unified Key Setup) encrypted partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">ea</td>
+                    <td class="name-column">Rufus extra partition</td>
+                    <td class="description-column">Rufus partitioning software extra partition. Also Freedesktop boot.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">eb</td>
+                    <td class="name-column">BeOS BFS</td>
+                    <td class="description-column">BeOS BFS (Be File System) partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">ec</td>
+                    <td class="name-column">SkyOS SkyFS</td>
+                    <td class="description-column">SkyOS SkyFS filesystem based on OpenBeFS.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">ed</td>
+                    <td class="name-column">Unused</td>
+                    <td class="description-column">Planned for Sprytix OS.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">ee</td>
+                    <td class="name-column">Indication that this legacy MBR is followed by an EFI header</td>
+                    <td class="description-column">Indicates legacy MBR followed by EFI header.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">ef</td>
+                    <td class="name-column">Partition that contains an EFI file system</td>
+                    <td class="description-column">EFI (Extensible Firmware Interface) file system partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">f0</td>
+                    <td class="name-column">Linux/PA-RISC boot loader</td>
+                    <td class="description-column">Linux/PA-RISC boot loader partition in first 2GB of drive.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">f1</td>
+                    <td class="name-column">Storage Dimensions SpeedStor</td>
+                    <td class="description-column">Storage Dimensions SpeedStor partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">f2</td>
+                    <td class="name-column">DOS 3.3+ secondary partition</td>
+                    <td class="description-column">DOS 3.3+ secondary partition (Sperry IT/Unisys MS-DOS 3.xx logically sectored FAT).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">f3</td>
+                    <td class="name-column">Reserved</td>
+                    <td class="description-column">Reserved (Storage Dimensions SpeedStor).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">f4</td>
+                    <td class="name-column">SpeedStor large partition</td>
+                    <td class="description-column">SpeedStor large partition. Also Prologue single-volume partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">f5</td>
+                    <td class="name-column">Prologue multi-volume partition</td>
+                    <td class="description-column">Prologue multi-volume partition (1 to 10 volumes MD0-MD9).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">f6</td>
+                    <td class="name-column">Storage Dimensions SpeedStor</td>
+                    <td class="description-column">Storage Dimensions SpeedStor partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">f7</td>
+                    <td class="name-column">DDRdrive Solid State File System</td>
+                    <td class="description-column">DDRdrive Solid State File System (SSFS) for maximizing IOPS performance.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">f9</td>
+                    <td class="name-column">pCache</td>
+                    <td class="description-column">pCache partition (ext2/ext3 persistent cache partition).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">fa</td>
+                    <td class="name-column">Bochs</td>
+                    <td class="description-column">MandrakeSoft's Bochs x86 emulator partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">fb</td>
+                    <td class="name-column">VMware File System partition</td>
+                    <td class="description-column">VMware File System partition.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">fc</td>
+                    <td class="name-column">VMware Swap partition</td>
+                    <td class="description-column">VMware Swap partition (also used as VMkernel dump partition).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">fd</td>
+                    <td class="name-column">Linux raid partition with autodetect using persistent superblock</td>
+                    <td class="description-column">Linux RAID partition with autodetect using persistent superblock.</td>
+                </tr>
+                <tr>
+                    <td class="id-column">fe</td>
+                    <td class="name-column">SpeedStor &gt; 1024 cyl.</td>
+                    <td class="description-column">SpeedStor partition beyond 1024 cylinders. Also LANstep, IBM PS/2 IML, Windows NT Disk Administrator hidden partition, and Linux LVM (old).</td>
+                </tr>
+                <tr>
+                    <td class="id-column">ff</td>
+                    <td class="name-column">Xenix Bad Block Table</td>
+                    <td class="description-column">Xenix Bad Block Table.</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="source-info">
+            <strong>Source:</strong> This information was extracted from <a href="https://aeb.win.tue.nl/partitions/partition_types-1.html" target="_blank">https://aeb.win.tue.nl/partitions/partition_types-1.html</a><br>
+            <strong>Copyright:</strong> Andries E. Brouwer 1995-2013<br>
+            <strong>Note:</strong> This list is regularly updated. For the most current information, please visit the original source.
+        </div>
+    </div>
+</body>
+</html>

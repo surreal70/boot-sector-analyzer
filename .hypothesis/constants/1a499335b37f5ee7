@@ -1,0 +1,4 @@
+# file: /home/andreas/kiro/boot-sector-analyzer/boot_sector_analyzer/config.py
+# hypothesis_version: 6.148.7
+
+[100, '-', '.', 'INFO', '__BOOL__', '__FLOAT__', '__INT__', '__NONE__', '__STR__', 'analysis', 'api', 'cache', 'calculate_entropy', 'check_signatures', 'config.ini', 'default_format', 'detect_patterns', 'directory', 'enabled', 'expiry_hours', 'extract_strings', 'false', 'file', 'format', 'highlight_threats', 'human', 'include_raw_data', 'level', 'logging', 'max_retries', 'max_size_mb', 'max_strings_display', 'min_string_length', 'output', 'rate_limit_seconds', 'replace', 'timeout_seconds', 'true', 'utf-8', 'virustotal_api_key', 'w']

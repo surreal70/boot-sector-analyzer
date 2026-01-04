@@ -520,7 +520,7 @@ class ContentAnalyzer:
             boot_code: Boot code bytes to disassemble (typically first 446 bytes)
             
         Returns:
-            DisassemblyResult with instructions and patterns
+            DisassemblyResult with instructions and patterns, or None if boot code is empty
             
         Raises:
             ContentAnalysisError: If disassembly fails
@@ -535,6 +535,11 @@ class ContentAnalyzer:
                 error_code="INVALID_DATA_TYPE",
                 details={"data_type": str(type(boot_code))}
             )
+        
+        # Check if boot code is empty (all zeros)
+        if self.check_empty_boot_code(boot_code):
+            logger.info("Boot code region contains only zeros, skipping disassembly")
+            return None
         
         try:
             # Use disassembly engine with error handling
@@ -559,3 +564,20 @@ class ContentAnalyzer:
                 error_code="DISASSEMBLY_ERROR",
                 details={"exception_type": type(e).__name__, "error": str(e)}
             )
+
+    def check_empty_boot_code(self, boot_code: bytes) -> bool:
+        """
+        Check if boot code region contains only zero bytes.
+        
+        Args:
+            boot_code: Boot code bytes to check
+            
+        Returns:
+            True if boot code contains only zeros, False otherwise
+        """
+        if not isinstance(boot_code, bytes):
+            return False
+        
+        # Check if all bytes in the boot code region (first 446 bytes) are zero
+        boot_region = boot_code[:446] if len(boot_code) >= 446 else boot_code
+        return all(byte == 0 for byte in boot_region)

@@ -1,10 +1,10 @@
-# Requirements Document - Boot Sector Analyzer v0.2.0
+# Requirements Document - Boot Sector Analyzer v0.2.2
 
 ## Introduction
 
 A Python console application that performs comprehensive analysis of boot sectors from disk drives or boot sector image files. The system analyzes the structure and content of boot sectors, then cross-references findings against internet resources to identify suspicious deviations or potential security threats.
 
-**Version 0.2.0** provides complete implementation of all specified requirements with comprehensive testing and validation, including enhanced hexdump functionality for manual boot sector review, boot code disassembly with assembly syntax highlighting, and HTML report generation with interactive elements and responsive design.
+**Version 0.2.2** provides complete implementation of all specified requirements with comprehensive testing and validation, including enhanced hexdump functionality for manual boot sector review, boot code disassembly with assembly syntax highlighting, HTML report generation with interactive elements and responsive design, and improved HTML styling for better readability and professional presentation.
 
 ## Glossary
 
@@ -149,6 +149,7 @@ A Python console application that performs comprehensive analysis of boot sector
 7. THE Content_Analyzer SHALL identify and highlight common boot code patterns (jump instructions, interrupt calls, disk operations)
 8. WHEN generating HTML reports, THE Content_Analyzer SHALL format assembly code in a monospace font with proper indentation
 9. THE Content_Analyzer SHALL include instruction comments for common boot sector operations (INT 13h, INT 10h, etc.)
+10. WHEN the boot code region contains only zero bytes, THE Content_Analyzer SHALL skip disassembly and report "No boot code present"
 
 ### Requirement 10: HTML Report Formatting
 
@@ -165,6 +166,35 @@ A Python console application that performs comprehensive analysis of boot sector
 7. THE Report_Generator SHALL include a table of contents with anchor links for easy navigation
 8. WHEN displaying hash values in HTML, THE Report_Generator SHALL format them as copyable monospace text
 9. THE Report_Generator SHALL include metadata such as generation timestamp and analyzer version in the HTML header
+
+### Requirement 12: Individual Partition Color Coding
+
+**User Story:** Als Sicherheitsanalyst möchte ich jede Partition in der Partitionstabelle in einer anderen Farbe dargestellt sehen, damit ich die einzelnen Partitionen visuell besser unterscheiden und analysieren kann.
+
+#### Acceptance Criteria
+
+1. WHEN displaying the partition table in hexdump format, THE Report_Generator SHALL color each of the 4 partition entries with a distinct color
+2. WHEN generating HTML reports, THE Report_Generator SHALL use different background colors for each partition entry (Partition 1, 2, 3, and 4)
+3. WHEN generating human-readable reports with color support, THE Report_Generator SHALL use different ANSI colors for each partition entry
+4. THE Report_Generator SHALL use a consistent color scheme where Partition 1 uses one color, Partition 2 uses another color, etc.
+5. WHEN a partition entry is empty (all zeros), THE Report_Generator SHALL use a neutral color to indicate the empty state
+6. THE Report_Generator SHALL include a color legend showing which color corresponds to which partition number
+7. WHEN displaying partition table data in the MBR structure section, THE Report_Generator SHALL maintain color consistency across all display formats
+
+### Requirement 13: HTML Report Styling Improvements
+
+**User Story:** Als Sicherheitsanalyst möchte ich HTML-Berichte mit verbesserter Lesbarkeit und professionellem Erscheinungsbild erhalten, damit ich die Analyseergebnisse besser verstehen und präsentieren kann.
+
+#### Acceptance Criteria
+
+1. WHEN displaying assembly code in HTML format, THE Report_Generator SHALL use a light background color instead of black for better readability
+2. WHEN displaying assembly code in HTML format, THE Report_Generator SHALL maintain syntax highlighting with appropriate contrast against the light background
+3. WHEN displaying hexdump tables in HTML format, THE Report_Generator SHALL use fixed-width columns for the offset and hex byte columns
+4. THE Report_Generator SHALL ensure the offset column has consistent width regardless of address value
+5. THE Report_Generator SHALL ensure hex byte columns maintain uniform spacing and alignment
+6. WHEN displaying assembly code in HTML format, THE Report_Generator SHALL use a professional color scheme suitable for technical documentation
+7. THE Report_Generator SHALL ensure all text remains readable with sufficient contrast against background colors
+8. WHEN the boot code region contains only zero bytes, THE Report_Generator SHALL display "No boot code present" and skip disassembly processing
 
 ### Requirement 9: Error Handling and Logging
 

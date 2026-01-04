@@ -1,10 +1,10 @@
-# Design Document: Boot Sector Analyzer v0.2.0
+# Design Document: Boot Sector Analyzer v0.2.2
 
 ## Overview
 
 The Boot Sector Analyzer is a Python console application that performs comprehensive analysis of boot sectors from disk drives or boot sector image files. The system follows a modular architecture with distinct components for structure analysis, content analysis, security scanning, and threat intelligence gathering.
 
-**Version 0.2.0** represents the enhanced release with complete functionality for boot sector analysis, security threat detection, comprehensive reporting capabilities, advanced hexdump functionality for manual review, boot code disassembly with assembly syntax highlighting, and HTML report generation with interactive elements and responsive design.
+**Version 0.2.2** represents the enhanced release with complete functionality for boot sector analysis, security threat detection, comprehensive reporting capabilities, advanced hexdump functionality for manual review, boot code disassembly with assembly syntax highlighting, HTML report generation with interactive elements and responsive design, individual partition color coding, and improved HTML styling for better readability and professional presentation.
 
 The application uses Python's built-in `struct` module for binary parsing, integrates with the VirusTotal API for threat intelligence, includes a disassembly engine for x86/x86-64 boot code analysis, and provides human-readable, JSON, and HTML output formats for analysis results.
 
@@ -269,6 +269,315 @@ class HTMLGenerator:
 - MBR section highlighting in hexdump display
 - Copyable hash values and technical data
 
+### Individual Partition Color Coding
+
+The system will enhance the existing MBR section color coding to provide distinct colors for each of the 4 partition table entries, improving visual analysis of partition layouts.
+
+```python
+class PartitionColors:
+    """Color scheme for individual partition entries."""
+    PARTITION_1 = "#FFE6E6"  # Light red
+    PARTITION_2 = "#E6F3FF"  # Light blue  
+    PARTITION_3 = "#E6FFE6"  # Light green
+    PARTITION_4 = "#FFF0E6"  # Light orange
+    EMPTY_PARTITION = "#F5F5F5"  # Light gray
+    
+    # ANSI colors for terminal output
+    ANSI_PARTITION_1 = ANSIColors.RED
+    ANSI_PARTITION_2 = ANSIColors.BLUE
+    ANSI_PARTITION_3 = ANSIColors.GREEN
+    ANSI_PARTITION_4 = ANSIColors.YELLOW
+    ANSI_EMPTY = ANSIColors.WHITE
+
+class MBRDecoder:
+    def get_partition_section_type(self, offset: int) -> Tuple[MBRSection, int]:
+        """
+        Determine which partition entry a byte offset belongs to.
+        
+        Args:
+            offset: Byte offset within the 512-byte MBR
+            
+        Returns:
+            Tuple of (MBR section type, partition number 1-4)
+        """
+        if 446 <= offset <= 509:
+            # Calculate which partition entry (0-3, return as 1-4)
+            partition_offset = offset - 446
+            partition_number = (partition_offset // 16) + 1
+            return (MBRSection.PARTITION_TABLE, partition_number)
+        else:
+            return (self.get_section_type(offset), 0)
+```
+
+**Color Assignment Strategy:**
+- **Partition 1 (0x01BE-0x01CD)**: Light red background in HTML, red ANSI in terminal
+- **Partition 2 (0x01CE-0x01DD)**: Light blue background in HTML, blue ANSI in terminal  
+- **Partition 3 (0x01DE-0x01ED)**: Light green background in HTML, green ANSI in terminal
+- **Partition 4 (0x01EE-0x01FD)**: Light orange background in HTML, yellow ANSI in terminal
+- **Empty Partitions**: Light gray background, white ANSI for unused entries
+
+**Implementation Approach:**
+1. Extend `MBRDecoder.get_section_type()` to return partition-specific information
+2. Update `ReportGenerator.format_hexdump_table()` to apply partition-specific colors
+3. Update `HTMLGenerator` CSS classes for individual partition styling
+4. Add color legend generation for all output formats
+5. Ensure color consistency across human-readable, JSON metadata, and HTML formats
+
+### HTML Generator Updates
+
+```python
+class HTMLGenerator:
+    def get_partition_css_class(self, offset: int) -> str:
+        """Get CSS class for partition-specific styling."""
+        if 446 <= offset <= 509:
+            partition_offset = offset - 446
+            partition_number = (partition_offset // 16) + 1
+            return f"mbr-partition-{partition_number}"
+        else:
+            return self.get_mbr_css_class(offset)
+    
+    def generate_partition_legend(self, mbr_structure: MBRStructure) -> str:
+        """Generate HTML legend for partition colors."""
+        legend_items = []
+        for i, partition in enumerate(mbr_structure.partition_entries, 1):
+            status = "Empty" if partition.is_empty else f"Type 0x{partition.system_id:02X}"
+            legend_items.append(
+                f'<li><span class="mbr-partition-{i}" style="padding: 2px 8px; margin-right: 10px;">■</span> '
+                f'Partition {i}: {status}</li>'
+            )
+        return f'<ul>{"".join(legend_items)}</ul>'
+```
+
+**CSS Styling:**
+```css
+.mbr-partition-1 { background-color: #FFE6E6 !important; } /* Light red */
+.mbr-partition-2 { background-color: #E6F3FF !important; } /* Light blue */
+.mbr-partition-3 { background-color: #E6FFE6 !important; } /* Light green */
+.mbr-partition-4 { background-color: #FFF0E6 !important; } /* Light orange */
+.mbr-partition-empty { background-color: #F5F5F5 !important; } /* Light gray */
+```
+
+### HTML Styling Improvements
+
+The system will enhance the existing HTML report generation with improved styling for better readability and professional presentation, addressing specific usability issues with assembly code display and hexdump table formatting.
+
+```python
+class HTMLStylingEnhancements:
+    """Enhanced styling configuration for HTML reports."""
+    
+    # Light background color scheme for assembly code
+    ASSEMBLY_BACKGROUND = "#f8f9fa"  # Light gray background
+    ASSEMBLY_TEXT_COLOR = "#212529"  # Dark text for contrast
+    
+    # Professional color scheme for syntax highlighting
+    INSTRUCTION_COLOR = "#0066cc"    # Professional blue
+    REGISTER_COLOR = "#228b22"       # Forest green  
+    IMMEDIATE_COLOR = "#d2691e"      # Chocolate orange
+    ADDRESS_COLOR = "#dc143c"        # Crimson red
+    COMMENT_COLOR = "#6a737d"        # Muted gray
+    
+    # Fixed-width column specifications
+    HEXDUMP_OFFSET_WIDTH = "80px"    # Fixed width for offset column
+    HEXDUMP_BYTE_WIDTH = "30px"      # Fixed width for each hex byte column
+    
+    @staticmethod
+    def generate_enhanced_css() -> str:
+        """Generate enhanced CSS with improved styling."""
+        return """
+        /* Enhanced assembly code styling */
+        .assembly-code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: #f8f9fa;
+            color: #212529;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            overflow-x: auto;
+            line-height: 1.4;
+        }
+        
+        /* Professional syntax highlighting */
+        .asm-instruction { color: #0066cc; font-weight: 500; }
+        .asm-register { color: #228b22; }
+        .asm-immediate { color: #d2691e; }
+        .asm-address { color: #dc143c; }
+        .asm-comment { color: #6a737d; font-style: italic; }
+        
+        /* Fixed-width hexdump table */
+        .hexdump-table {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.85em;
+            background-color: #fff;
+            table-layout: fixed;
+        }
+        
+        .hexdump-table .offset {
+            width: 80px;
+            background-color: #f8f9fa;
+            font-weight: bold;
+            text-align: right;
+            padding: 4px 8px;
+        }
+        
+        .hexdump-table td:not(.offset):not(.ascii) {
+            width: 30px;
+            text-align: center;
+            padding: 4px 2px;
+        }
+        
+        .hexdump-table .ascii {
+            width: 120px;
+            text-align: left;
+            background-color: #f8f9fa;
+            padding: 4px 8px;
+        }
+        """
+
+class ContentAnalyzer:
+    def check_empty_boot_code(self, boot_code: bytes) -> bool:
+        """Check if boot code region contains only zero bytes."""
+        return all(byte == 0 for byte in boot_code[:446])
+    
+    def disassemble_boot_code(self, boot_code: bytes) -> Optional[DisassemblyResult]:
+        """
+        Disassemble x86/x86-64 assembly instructions from boot code.
+        
+        Returns None if boot code is empty (all zeros).
+        """
+        if self.check_empty_boot_code(boot_code):
+            return None  # Skip disassembly for empty boot code
+            
+        # Proceed with normal disassembly...
+        return self.disassembly_engine.disassemble(boot_code[:446])
+
+class HTMLGenerator:
+    def format_assembly_syntax_highlighting(self, disassembly: Optional[DisassemblyResult]) -> str:
+        """
+        Apply enhanced syntax highlighting to assembly code with light background.
+        
+        Args:
+            disassembly: Disassembly results to format, or None if no boot code
+            
+        Returns:
+            HTML with enhanced syntax-highlighted assembly code or empty boot code message
+        """
+        if disassembly is None:
+            return '<div class="assembly-code"><p><em>No boot code present (all zeros)</em></p></div>'
+        
+        if not disassembly.instructions:
+            return '<div class="assembly-code"><p><em>No assembly instructions available</em></p></div>'
+        
+        # Apply enhanced styling with light background and professional colors
+        html_lines = []
+        for instruction in disassembly.instructions:
+            # Format with enhanced color scheme
+            addr_html = f'<span class="asm-address">{instruction.address:04X}</span>'
+            bytes_str = ' '.join(f'{b:02X}' for b in instruction.bytes)
+            bytes_html = f'<span class="monospace">{bytes_str:12}</span>'
+            mnemonic_html = f'<span class="asm-instruction">{instruction.mnemonic}</span>'
+            operands_html = self._highlight_operands_enhanced(instruction.operands)
+            
+            comment_html = ""
+            if instruction.comment:
+                comment_html = f' <span class="asm-comment">; {html_escape(instruction.comment)}</span>'
+            
+            line = f'{addr_html}:  {bytes_html}  {mnemonic_html} {operands_html}{comment_html}'
+            html_lines.append(line)
+        
+        return f'<div class="assembly-code">{"<br>".join(html_lines)}</div>'
+    
+    def format_hexdump_with_fixed_columns(self, boot_sector: bytes, mbr_structure=None) -> str:
+        """
+        Create hexdump table with fixed-width columns for consistent alignment.
+        
+        Args:
+            boot_sector: 512-byte boot sector data
+            mbr_structure: Optional MBR structure for partition-specific coloring
+            
+        Returns:
+            HTML table with fixed-width columns and enhanced formatting
+        """
+        if len(boot_sector) != 512:
+            return '<p class="error">Invalid boot sector size</p>'
+        
+        # Create table with fixed-width styling
+        html_lines = ['<table class="hexdump-table">']
+        
+        # Header row with fixed widths
+        header_cells = ['<th class="offset">Offset</th>']
+        for i in range(16):
+            header_cells.append(f'<th style="width: 30px;">{i:02X}</th>')
+        header_cells.append('<th class="ascii">ASCII</th>')
+        html_lines.append(f'<tr>{"".join(header_cells)}</tr>')
+        
+        # Data rows with consistent column widths
+        for offset in range(0, len(boot_sector), 16):
+            row_data = boot_sector[offset:offset + 16]
+            
+            # Fixed-width offset cell
+            cells = [f'<td class="offset">{offset:04X}</td>']
+            
+            # Fixed-width hex byte cells
+            for i, byte_val in enumerate(row_data):
+                byte_offset = offset + i
+                css_class = self._get_mbr_section_class(byte_offset, mbr_structure)
+                cells.append(f'<td class="{css_class}">{byte_val:02X}</td>')
+            
+            # Pad incomplete rows
+            for i in range(len(row_data), 16):
+                cells.append('<td></td>')
+            
+            # Fixed-width ASCII cell
+            ascii_repr = ''.join(
+                chr(b) if 32 <= b <= 126 else '.' for b in row_data
+            )
+            cells.append(f'<td class="ascii">{html_escape(ascii_repr)}</td>')
+            
+            html_lines.append(f'<tr>{"".join(cells)}</tr>')
+        
+        html_lines.append('</table>')
+        
+        # Add enhanced legend
+        legend = self._generate_enhanced_hexdump_legend(mbr_structure)
+        
+        return ''.join(html_lines) + legend
+```
+
+**Key Styling Improvements:**
+
+1. **Light Background for Assembly Code**:
+   - Changed from dark theme (#1e1e1e) to light background (#f8f9fa)
+   - Updated text color to dark (#212529) for better contrast
+   - Added subtle border and improved padding
+
+2. **Professional Color Scheme**:
+   - Instructions: Professional blue (#0066cc) with medium font weight
+   - Registers: Forest green (#228b22) for better readability
+   - Immediate values: Chocolate orange (#d2691e) for warmth
+   - Memory addresses: Crimson red (#dc143c) for attention
+   - Comments: Muted gray (#6a737d) to reduce visual noise
+
+3. **Fixed-Width Hexdump Columns**:
+   - Offset column: Fixed 80px width for consistency
+   - Hex byte columns: Fixed 30px width each for uniform spacing
+   - ASCII column: Fixed 120px width for proper alignment
+   - Table layout: Fixed to prevent column width variations
+
+4. **Empty Boot Code Handling**:
+   - Check for all-zero boot code before disassembly
+   - Display "No boot code present" message instead of attempting disassembly
+   - Graceful handling prevents unnecessary processing and confusing output
+
+**Implementation Strategy:**
+1. Update `HTMLGenerator.embed_css_styles()` with enhanced CSS
+2. Modify `format_assembly_syntax_highlighting()` for light background theme
+3. Update `format_hexdump_with_colors()` to use fixed-width columns
+4. Add `check_empty_boot_code()` method to `ContentAnalyzer`
+5. Update disassembly logic to skip empty boot code regions
+6. Ensure backward compatibility with existing HTML reports
+
 ## Data Models
 
 ### MBR Structure
@@ -529,6 +838,38 @@ Based on the prework analysis, I'll convert the testable acceptance criteria int
 **Property 38: Hexdump format support**
 *For any* analysis report, the Report_Generator should include the hexdump in human-readable, JSON, and HTML output formats
 **Validates: Requirements 8.7**
+
+**Property 39: Individual partition color coding**
+*For any* partition table with multiple partition entries, the Report_Generator should assign distinct colors to each partition entry (1-4) and maintain color consistency across all display formats
+**Validates: Requirements 12.1, 12.2, 12.3, 12.4**
+
+**Property 40: Empty partition color handling**
+*For any* empty partition entry (all zeros), the Report_Generator should use a neutral color to indicate the empty state
+**Validates: Requirements 12.5**
+
+**Property 41: Partition color legend inclusion**
+*For any* report containing colored partition table data, the Report_Generator should include a color legend showing which color corresponds to which partition number
+**Validates: Requirements 12.6**
+
+**Property 42: Cross-format partition color consistency**
+*For any* analysis result, partition color assignments should remain consistent across human-readable, HTML, and hexdump display formats
+**Validates: Requirements 12.7**
+
+**Property 43: HTML light background styling**
+*For any* HTML report containing assembly code, the Report_Generator should use a light background color instead of black for improved readability while maintaining syntax highlighting
+**Validates: Requirements 13.1, 13.2**
+
+**Property 44: HTML fixed-width columns**
+*For any* HTML hexdump table, the Report_Generator should use fixed-width columns for the offset and hex byte columns to ensure consistent alignment
+**Validates: Requirements 13.3, 13.4, 13.5**
+
+**Property 45: HTML professional color scheme**
+*For any* HTML report with assembly code, the Report_Generator should use a professional color scheme suitable for technical documentation with sufficient contrast
+**Validates: Requirements 13.6, 13.7**
+
+**Property 46: Empty boot code handling**
+*For any* boot sector where the boot code region contains only zero bytes, the Content_Analyzer should skip disassembly processing and display "No boot code present"
+**Validates: Requirements 13.8, 11.10**
 
 ## Error Handling
 

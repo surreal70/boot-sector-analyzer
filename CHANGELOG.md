@@ -5,6 +5,51 @@ All notable changes to the Boot Sector Analyzer project will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-01-04
+
+### Added
+- **Empty Boot Code Detection**: Intelligent detection of all-zero boot code regions
+- **Professional Color Scheme**: Enhanced syntax highlighting for assembly code
+  - Professional blue (#0066cc) for instructions with medium font weight
+  - Forest green (#228b22) for registers with enhanced readability
+  - Chocolate orange (#d2691e) for immediate values
+  - Crimson red (#dc143c) for memory addresses
+  - Muted gray (#6a737d) for comments to reduce visual noise
+
+### Changed
+- **Assembly Code Background**: Updated from dark theme (#1e1e1e) to light background (#f8f9fa)
+- **Text Color**: Changed to dark (#212529) for better contrast and readability
+- **Hexdump Table Layout**: Implemented fixed-width columns for consistent alignment
+  - Offset column: Fixed 80px width
+  - Hex byte columns: Fixed 30px width each
+  - ASCII column: Fixed 120px width
+- **Table Layout**: Added `table-layout: fixed` to prevent column width variations
+
+### Enhanced
+- **HTML Reports**: Significantly improved readability in professional documentation contexts
+- **Boot Code Analysis**: Skip disassembly processing when boot code is empty (all zeros)
+- **User Experience**: Clear messaging for empty boot code regions instead of attempting disassembly
+- **Visual Presentation**: Professional appearance with subtle borders and improved padding
+
+### Fixed
+- **Column Alignment**: Fixed inconsistent hexdump column widths that could cause misalignment
+- **Readability Issues**: Improved assembly code readability in professional documentation contexts
+- **Layout Inconsistencies**: Eliminated hexdump table layout variations
+
+### Testing
+- **Updated Test Suite**: Modified HTML color coding tests to validate new professional color scheme
+- **Backward Compatibility**: Verified all existing functionality remains intact
+- **Integration Testing**: Confirmed all tests pass with new styling improvements
+- **Empty Boot Code Validation**: Tested empty boot code detection across all scenarios
+
+### Performance
+- **Optimized Processing**: Reduced unnecessary computation by skipping empty boot code analysis
+- **Efficient Disassembly**: Prevents processing of all-zero boot code regions
+
+### Requirements
+- **Requirement 13**: Complete implementation of HTML report styling improvements
+- **Requirement 11.10**: Enhanced boot code analysis with empty region detection
+
 ## [0.2.0] - 2026-01-04
 
 ### Added

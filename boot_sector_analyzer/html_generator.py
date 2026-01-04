@@ -30,13 +30,19 @@ class HTMLGenerator:
         threat_badge = self.format_threat_level_badge(analysis_result.security_analysis.threat_level)
         table_of_contents = self.create_table_of_contents()
         
-        # Format disassembly if available
-        assembly_html = ""
-        if analysis_result.disassembly:
-            assembly_html = self.format_assembly_syntax_highlighting(analysis_result.disassembly)
+        # Format disassembly (handles both present and empty boot code cases)
+        assembly_html = self.format_assembly_syntax_highlighting(analysis_result.disassembly)
         
-        # Format hexdump with colors
-        hexdump_html = self.format_hexdump_with_colors(analysis_result.hexdump.raw_data)
+        # Format hexdump with colors and partition-specific coloring
+        mbr_structure = None
+        try:
+            from .mbr_decoder import MBRDecoder
+            decoder = MBRDecoder()
+            mbr_structure = decoder.parse_mbr(analysis_result.hexdump.raw_data)
+        except Exception as e:
+            logger.debug(f"Could not parse MBR for partition coloring: {e}")
+        
+        hexdump_html = self.format_hexdump_with_colors(analysis_result.hexdump.raw_data, mbr_structure)
         
         # Get current timestamp and version
         generation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -283,32 +289,34 @@ body {
 /* Assembly syntax highlighting */
 .assembly-code {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    background-color: #1e1e1e;
-    color: #d4d4d4;
+    background-color: #f8f9fa;
+    color: #212529;
     padding: 20px;
     border-radius: 5px;
+    border: 1px solid #dee2e6;
     overflow-x: auto;
     line-height: 1.4;
 }
 
 .asm-instruction {
-    color: #569cd6; /* Blue for instructions */
+    color: #0066cc; /* Professional blue */
+    font-weight: 500;
 }
 
 .asm-register {
-    color: #4ec9b0; /* Green for registers */
+    color: #228b22; /* Forest green */
 }
 
 .asm-immediate {
-    color: #ce9178; /* Orange for immediate values */
+    color: #d2691e; /* Chocolate orange */
 }
 
 .asm-address {
-    color: #f44747; /* Red for memory addresses */
+    color: #dc143c; /* Crimson red */
 }
 
 .asm-comment {
-    color: #6a9955; /* Green for comments */
+    color: #6a737d; /* Muted gray */
     font-style: italic;
 }
 
@@ -319,6 +327,7 @@ body {
     width: 100%;
     font-size: 0.85em;
     background-color: #fff;
+    table-layout: fixed;
 }
 
 .hexdump-table th,
@@ -335,14 +344,24 @@ body {
 }
 
 .hexdump-table .offset {
+    width: 80px;
     background-color: #f8f9fa;
     font-weight: bold;
     text-align: right;
+    padding: 4px 8px;
+}
+
+.hexdump-table td:not(.offset):not(.ascii) {
+    width: 30px;
+    text-align: center;
+    padding: 4px 2px;
 }
 
 .hexdump-table .ascii {
+    width: 120px;
     text-align: left;
     background-color: #f8f9fa;
+    padding: 4px 8px;
 }
 
 /* MBR section highlighting */
@@ -356,6 +375,27 @@ body {
 
 .mbr-partition-table {
     background-color: #d4edda !important; /* Light green */
+}
+
+/* Individual partition colors */
+.mbr-partition-1 {
+    background-color: #FFE6E6 !important; /* Light red */
+}
+
+.mbr-partition-2 {
+    background-color: #E6F3FF !important; /* Light blue */
+}
+
+.mbr-partition-3 {
+    background-color: #E6FFE6 !important; /* Light green */
+}
+
+.mbr-partition-4 {
+    background-color: #FFF0E6 !important; /* Light orange */
+}
+
+.mbr-partition-empty {
+    background-color: #F5F5F5 !important; /* Light gray */
 }
 
 .mbr-boot-signature {
@@ -479,18 +519,21 @@ body {
         
         return f'<div class="threat-badge {css_class}">{icon} {threat_level.value}</div>'
     
-    def format_assembly_syntax_highlighting(self, disassembly: DisassemblyResult) -> str:
+    def format_assembly_syntax_highlighting(self, disassembly) -> str:
         """
         Apply syntax highlighting to assembly code.
         
         Args:
-            disassembly: Disassembly results to format
+            disassembly: Disassembly results to format, or None if no boot code
             
         Returns:
-            HTML with syntax-highlighted assembly code
+            HTML with syntax-highlighted assembly code or empty boot code message
         """
+        if disassembly is None:
+            return '<div class="assembly-code"><p><em>No boot code present (all zeros)</em></p></div>'
+        
         if not disassembly.instructions:
-            return '<p class="monospace">No assembly instructions available.</p>'
+            return '<div class="assembly-code"><p><em>No assembly instructions available</em></p></div>'
         
         html_lines = []
         
@@ -584,26 +627,36 @@ body {
         </nav>
         """
     
-    def format_hexdump_with_colors(self, boot_sector: bytes) -> str:
+    def format_hexdump_with_colors(self, boot_sector: bytes, mbr_structure=None) -> str:
         """
-        Create color-coded hexdump table for MBR sections.
+        Create color-coded hexdump table for MBR sections with individual partition coloring.
         
         Args:
             boot_sector: 512-byte boot sector data
+            mbr_structure: Optional MBR structure for partition-specific coloring
             
         Returns:
-            HTML table with color-coded MBR sections
+            HTML table with color-coded MBR sections and individual partitions
         """
         if len(boot_sector) != 512:
             return '<p class="error">Invalid boot sector size</p>'
         
+        # Try to parse MBR structure if not provided
+        if mbr_structure is None:
+            try:
+                from .mbr_decoder import MBRDecoder
+                decoder = MBRDecoder()
+                mbr_structure = decoder.parse_mbr(boot_sector)
+            except Exception as e:
+                logger.debug(f"Could not parse MBR for partition coloring: {e}")
+        
         # Create table header
         html_lines = ['<table class="hexdump-table">']
         
-        # Header row
+        # Header row with fixed widths
         header_cells = ['<th class="offset">Offset</th>']
         for i in range(16):
-            header_cells.append(f'<th>{i:02X}</th>')
+            header_cells.append(f'<th style="width: 30px;">{i:02X}</th>')
         header_cells.append('<th class="ascii">ASCII</th>')
         html_lines.append(f'<tr>{"".join(header_cells)}</tr>')
         
@@ -614,10 +667,10 @@ body {
             # Offset cell
             cells = [f'<td class="offset">0x{offset:04X}</td>']
             
-            # Hex byte cells with MBR section coloring
+            # Hex byte cells with MBR section and partition-specific coloring
             for i, byte_val in enumerate(row_data):
                 byte_offset = offset + i
-                css_class = self._get_mbr_section_class(byte_offset)
+                css_class = self._get_mbr_section_class(byte_offset, mbr_structure)
                 cells.append(f'<td class="{css_class}">{byte_val:02X}</td>')
             
             # Pad incomplete rows
@@ -634,27 +687,63 @@ body {
         
         html_lines.append('</table>')
         
-        # Add legend
-        legend = """
-        <div class="mbr-legend" style="margin-top: 15px;">
-            <h4>MBR Section Legend:</h4>
-            <ul style="list-style: none; padding: 0;">
-                <li><span class="mbr-boot-code" style="padding: 2px 8px; margin-right: 10px;">■</span> Boot Code (0x0000-0x01BD)</li>
-                <li><span class="mbr-disk-signature" style="padding: 2px 8px; margin-right: 10px;">■</span> Disk Signature (0x01B8-0x01BB)</li>
-                <li><span class="mbr-partition-table" style="padding: 2px 8px; margin-right: 10px;">■</span> Partition Table (0x01BE-0x01FD)</li>
-                <li><span class="mbr-boot-signature" style="padding: 2px 8px; margin-right: 10px;">■</span> Boot Signature (0x01FE-0x01FF)</li>
-            </ul>
-        </div>
-        """
+        # Add legend with partition-specific colors
+        legend = self._generate_hexdump_legend(mbr_structure)
         
         return ''.join(html_lines) + legend
     
-    def _get_mbr_section_class(self, offset: int) -> str:
+    def _generate_hexdump_legend(self, mbr_structure=None) -> str:
+        """
+        Generate HTML legend for hexdump with partition-specific colors.
+        
+        Args:
+            mbr_structure: Optional MBR structure for partition-specific legend
+            
+        Returns:
+            HTML legend string
+        """
+        legend_lines = [
+            '<div class="mbr-legend" style="margin-top: 15px;">',
+            '<h4>MBR Section Legend:</h4>',
+            '<ul style="list-style: none; padding: 0;">'
+        ]
+        
+        # Standard MBR sections
+        legend_lines.append('<li><span class="mbr-boot-code" style="padding: 2px 8px; margin-right: 10px;">■</span> Boot Code (0x0000-0x01BD)</li>')
+        legend_lines.append('<li><span class="mbr-disk-signature" style="padding: 2px 8px; margin-right: 10px;">■</span> Disk Signature (0x01B8-0x01BB)</li>')
+        
+        # Partition-specific legend if MBR structure is available
+        if mbr_structure:
+            from .mbr_decoder import PartitionTypeRegistry
+            registry = PartitionTypeRegistry()
+            
+            for i, partition in enumerate(mbr_structure.partition_entries, 1):
+                if partition.is_empty:
+                    status = "Empty"
+                    css_class = "mbr-partition-empty"
+                else:
+                    part_type = registry.get_partition_type(partition.system_id)
+                    status = f"Type 0x{partition.system_id:02X} ({part_type})"
+                    css_class = f"mbr-partition-{i}"
+                
+                legend_lines.append(f'<li><span class="{css_class}" style="padding: 2px 8px; margin-right: 10px;">■</span> Partition {i}: {status}</li>')
+        else:
+            # Fallback to generic partition table
+            legend_lines.append('<li><span class="mbr-partition-table" style="padding: 2px 8px; margin-right: 10px;">■</span> Partition Table (0x01BE-0x01FD)</li>')
+        
+        legend_lines.append('<li><span class="mbr-boot-signature" style="padding: 2px 8px; margin-right: 10px;">■</span> Boot Signature (0x01FE-0x01FF)</li>')
+        legend_lines.extend(['</ul>', '</div>'])
+        
+        return ''.join(legend_lines)
+    
+    def _get_mbr_section_class(self, offset: int, mbr_structure=None) -> str:
         """
         Get CSS class for MBR section based on byte offset.
+        Supports individual partition coloring when MBR structure is provided.
         
         Args:
             offset: Byte offset in boot sector
+            mbr_structure: Optional MBR structure for partition-specific coloring
             
         Returns:
             CSS class name for the section
@@ -664,7 +753,21 @@ body {
         elif 0x01B8 <= offset <= 0x01BB:  # Disk signature (440-443)
             return "mbr-disk-signature"
         elif 0x01BE <= offset <= 0x01FD:  # Partition table (446-509)
-            return "mbr-partition-table"
+            if mbr_structure:
+                # Use partition-specific coloring
+                partition_offset = offset - 0x01BE  # 446 in decimal
+                partition_number = (partition_offset // 16) + 1
+                
+                # Check if partition is empty
+                if partition_number <= len(mbr_structure.partition_entries):
+                    partition_entry = mbr_structure.partition_entries[partition_number - 1]
+                    if partition_entry.is_empty:
+                        return "mbr-partition-empty"
+                
+                return f"mbr-partition-{partition_number}"
+            else:
+                # Fallback to generic partition table class
+                return "mbr-partition-table"
         elif 0x01FE <= offset <= 0x01FF:  # Boot signature (510-511)
             return "mbr-boot-signature"
         else:

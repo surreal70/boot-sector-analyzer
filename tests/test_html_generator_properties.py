@@ -428,8 +428,8 @@ class TestHTMLGeneratorProperties:
             assert "asm-comment" in css_content      # Green for comments
             
             # Should have appropriate colors for assembly syntax
-            # Blue for instructions, green for registers, orange for values, red for addresses
-            assembly_colors = ["#569cd6", "#4ec9b0", "#ce9178", "#f44747", "#6a9955"]
+            # Professional blue for instructions, forest green for registers, chocolate orange for values, crimson red for addresses, muted gray for comments
+            assembly_colors = ["#0066cc", "#228b22", "#d2691e", "#dc143c", "#6a737d"]
             assembly_colors_found = sum(1 for color in assembly_colors if color in css_content)
             assert assembly_colors_found >= 3, "Should have assembly syntax highlighting colors"
 

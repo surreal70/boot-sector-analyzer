@@ -1,4 +1,4 @@
-# Implementation Plan: Boot Sector Analyzer v0.2.0
+# Implementation Plan: Boot Sector Analyzer v0.2.2
 
 ## Overview
 
@@ -12,6 +12,12 @@ Enhanced hexdump functionality for manual review of boot sector raw data with fo
 
 **Version 0.2.0 Status: COMPLETED** ✅
 HTML output format with embedded CSS styling and boot code disassembly with assembly syntax highlighting have been successfully implemented and tested.
+
+**Version 0.2.1 Status: COMPLETED** ✅
+Individual partition color coding enhancement to improve visual analysis of partition table entries has been successfully implemented and tested.
+
+**Version 0.2.2 Status: IN PROGRESS** 🔄
+HTML styling improvements for better readability and professional presentation, including light background for assembly code, fixed-width hexdump columns, and empty boot code handling.
 
 ## Tasks
 
@@ -435,11 +441,156 @@ HTML output format with embedded CSS styling and boot code disassembly with asse
 - [x] 22. Final checkpoint - Complete v0.2.0 system validation
   - Ensure all tests pass, ask the user if questions arise.
 
+## Version 0.2.1 Tasks - Individual Partition Color Coding
+
+- [ ] 23. Implement individual partition color coding
+  - [ ] 23.1 Extend MBRDecoder with partition-specific color detection
+    - Add get_partition_section_type() method to identify individual partition entries
+    - Define PartitionColors class with color scheme for 4 partitions plus empty state
+    - Update existing get_section_type() to work with new partition-specific logic
+    - _Requirements: 12.1, 12.4_
+
+  - [ ]* 23.2 Write property test for individual partition color coding
+    - **Property 39: Individual partition color coding**
+    - **Validates: Requirements 12.1, 12.2, 12.3, 12.4**
+
+  - [ ]* 23.3 Write property test for empty partition color handling
+    - **Property 40: Empty partition color handling**
+    - **Validates: Requirements 12.5**
+
+  - [ ] 23.4 Update ReportGenerator for partition-specific colors
+    - Modify format_hexdump_table() to apply different colors to each partition entry
+    - Update ANSI color scheme to support 4 distinct partition colors
+    - Add partition color legend generation for human-readable output
+    - _Requirements: 12.1, 12.3, 12.6_
+
+  - [ ] 23.5 Update HTMLGenerator for partition-specific styling
+    - Add CSS classes for mbr-partition-1 through mbr-partition-4
+    - Update get_mbr_css_class() to return partition-specific classes
+    - Implement generate_partition_legend() for HTML color legend
+    - _Requirements: 12.2, 12.6_
+
+  - [ ]* 23.6 Write property test for partition color legend inclusion
+    - **Property 41: Partition color legend inclusion**
+    - **Validates: Requirements 12.6**
+
+  - [ ] 23.7 Ensure cross-format color consistency
+    - Update JSON output to include partition color metadata
+    - Ensure color assignments remain consistent across all output formats
+    - Test color consistency between human-readable, HTML, and hexdump formats
+    - _Requirements: 12.7_
+
+  - [ ]* 23.8 Write property test for cross-format partition color consistency
+    - **Property 42: Cross-format partition color consistency**
+    - **Validates: Requirements 12.7**
+
+- [ ] 24. Integration testing for partition color coding
+  - [ ] 24.1 Write integration tests for complete partition color workflow
+    - Test end-to-end partition color coding with sample MBR data
+    - Verify color assignments for all 4 partition entries
+    - Test empty partition handling and color assignment
+    - _Requirements: All partition color requirements_
+
+  - [ ] 24.2 Write cross-format partition color compatibility tests
+    - Ensure partition colors are consistent across human, JSON, and HTML formats
+    - Test color legend generation in all supported output formats
+    - Verify color assignments with various partition table configurations
+    - _Requirements: 12.7_
+
+- [ ] 25. Final checkpoint - Complete v0.2.1 partition color coding validation
+  - Ensure all partition color tests pass, ask the user if questions arise.
+
+## Version 0.2.2 Tasks - HTML Styling Improvements
+
+- [ ] 26. Implement HTML styling enhancements
+  - [ ] 26.1 Update HTMLGenerator CSS for light background assembly code
+    - Replace dark theme (#1e1e1e) with light background (#f8f9fa) for assembly code
+    - Update text color to dark (#212529) for better contrast
+    - Add subtle border and improved padding for professional appearance
+    - _Requirements: 13.1, 13.2_
+
+  - [ ] 26.2 Write property test for HTML light background styling
+    - **Property 43: HTML light background styling**
+    - **Validates: Requirements 13.1, 13.2**
+
+  - [ ] 26.3 Implement professional color scheme for syntax highlighting
+    - Update instruction color to professional blue (#0066cc) with medium font weight
+    - Change register color to forest green (#228b22) for better readability
+    - Update immediate values to chocolate orange (#d2691e)
+    - Change memory addresses to crimson red (#dc143c)
+    - Update comments to muted gray (#6a737d) to reduce visual noise
+    - _Requirements: 13.6, 13.7_
+
+  - [ ] 26.4 Write property test for HTML professional color scheme
+    - **Property 45: HTML professional color scheme**
+    - **Validates: Requirements 13.6, 13.7**
+
+- [ ] 27. Implement fixed-width hexdump table columns
+  - [ ] 27.1 Update hexdump table CSS for fixed column widths
+    - Set offset column to fixed 80px width for consistency
+    - Set hex byte columns to fixed 30px width each for uniform spacing
+    - Set ASCII column to fixed 120px width for proper alignment
+    - Use table-layout: fixed to prevent column width variations
+    - _Requirements: 13.3, 13.4, 13.5_
+
+  - [ ] 27.2 Write property test for HTML fixed-width columns
+    - **Property 44: HTML fixed-width columns**
+    - **Validates: Requirements 13.3, 13.4, 13.5**
+
+  - [ ] 27.3 Update format_hexdump_with_colors method for fixed widths
+    - Modify HTML table generation to use fixed-width column specifications
+    - Ensure consistent alignment across all hexdump rows
+    - Test with various boot sector data to verify column consistency
+    - _Requirements: 13.3, 13.4, 13.5_
+
+- [ ] 28. Implement empty boot code detection and handling
+  - [ ] 28.1 Add empty boot code detection to ContentAnalyzer
+    - Implement check_empty_boot_code() method to detect all-zero boot code
+    - Update disassemble_boot_code() to return None for empty boot code
+    - Add logic to skip disassembly processing when boot code is empty
+    - _Requirements: 13.8, 11.10_
+
+  - [ ] 28.2 Write property test for empty boot code handling
+    - **Property 46: Empty boot code handling**
+    - **Validates: Requirements 13.8, 11.10**
+
+  - [ ] 28.3 Update HTMLGenerator for empty boot code display
+    - Modify format_assembly_syntax_highlighting() to handle None disassembly
+    - Display "No boot code present (all zeros)" message for empty boot code
+    - Ensure consistent styling with light background theme
+    - _Requirements: 13.8_
+
+  - [ ] 28.4 Update ReportGenerator for all output formats
+    - Ensure empty boot code handling works in human-readable format
+    - Update JSON output to include empty boot code status
+    - Test empty boot code handling across all output formats
+    - _Requirements: 13.8, 11.10_
+
+- [ ] 29. Integration testing for HTML styling improvements
+  - [ ] 29.1 Write integration tests for complete HTML styling workflow
+    - Test end-to-end HTML report generation with enhanced styling
+    - Verify light background assembly code display
+    - Test fixed-width hexdump table formatting
+    - Verify empty boot code handling in HTML output
+    - _Requirements: All HTML styling requirements_
+
+  - [ ] 29.2 Write cross-format styling compatibility tests
+    - Ensure styling improvements don't break existing functionality
+    - Test backward compatibility with existing HTML reports
+    - Verify consistency between different output formats
+    - Test with various boot sector samples including empty boot code
+    - _Requirements: 13.1-13.8_
+
+- [ ] 30. Final checkpoint - Complete v0.2.2 HTML styling improvements validation
+  - Ensure all HTML styling tests pass, ask the user if questions arise.
+
 ## Notes
 
 - **Version 0.1.0 Complete**: All core tasks successfully implemented and tested
 - **Version 0.1.1 Complete**: Enhanced hexdump functionality successfully implemented and tested
 - **Version 0.2.0 Complete**: HTML output and boot code disassembly functionality successfully implemented and tested
+- **Version 0.2.1 Complete**: Individual partition color coding enhancement for improved visual analysis
+- **Version 0.2.2 In Progress**: HTML styling improvements for better readability and professional presentation
 - Each task references specific requirements for traceability
 - Checkpoints ensure incremental validation throughout development
 - Property tests validate universal correctness properties using hypothesis library
@@ -452,8 +603,12 @@ HTML output format with embedded CSS styling and boot code disassembly with asse
 - **Total Test Coverage**: 155 tests covering all functionality with property-based, unit, and integration testing
 - **v0.1.x**: 26 correctness properties validated (21 from v0.1.0 + 5 hexdump properties)
 - **v0.2.0**: 38 total correctness properties (26 existing + 12 new for HTML/disassembly)
+- **v0.2.1**: 42 total correctness properties (38 existing + 4 new for partition color coding)
+- **v0.2.2**: 46 total correctness properties (42 existing + 4 new for HTML styling improvements)
 - Complete test coverage with both unit and integration tests
 - Hexdump feature provides 17-column table format with offset and ASCII representation
 - **New in v0.2.0**: HTML output with embedded CSS, responsive design, and syntax highlighting
 - **New in v0.2.0**: x86/x86-64 boot code disassembly with pattern recognition and commenting
+- **New in v0.2.1**: Individual partition color coding for enhanced visual analysis of partition tables
+- **New in v0.2.2**: HTML styling improvements with light background, fixed-width columns, and empty boot code handling
 - **Dependencies**: capstone-engine for disassembly, beautifulsoup4 and html5lib for HTML validation

@@ -1,6 +1,6 @@
 # Boot Sector Analyzer
 
-**Version 0.2.0** - HTML Reports & Disassembly Release
+**Version 0.2.2** - Enhanced HTML Styling Release
 
 A comprehensive Python tool for analyzing boot sectors from disk drives or boot sector image files. The system analyzes the structure and content of boot sectors, performs x86/x86-64 disassembly, and generates professional HTML reports with responsive design and interactive elements.
 
@@ -139,6 +139,21 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 This tool is designed for security analysis purposes. Always ensure you have proper authorization before analyzing boot sectors from systems you do not own.
 
 ## Changelog
+
+### Version 0.2.2 (Enhanced HTML Styling Release)
+
+**HTML Styling Improvements:**
+- **Light Background Assembly Code**: Changed from dark theme to professional light background (#f8f9fa)
+- **Professional Color Scheme**: Updated syntax highlighting with blue instructions, green registers, and improved contrast
+- **Fixed-Width Hexdump Columns**: Implemented consistent column widths (80px offset, 30px hex bytes, 120px ASCII)
+- **Empty Boot Code Detection**: Intelligent handling of all-zero boot code regions with appropriate messaging
+- **Enhanced Readability**: Improved text contrast and professional appearance for technical documentation
+
+**Technical Enhancements:**
+- Updated CSS styling for better readability and professional presentation
+- Added empty boot code detection to skip unnecessary disassembly
+- Fixed hexdump table layout inconsistencies
+- Maintained full backward compatibility with existing functionality
 
 ### Version 0.2.0 (HTML Reports & Disassembly Release)
 

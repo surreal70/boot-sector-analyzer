@@ -67,7 +67,7 @@ class ReportGenerator:
     def format_hexdump_table(self, boot_sector: bytes, use_colors: bool = False) -> list[str]:
         """
         Format hexdump as 17-column table with offset and hex bytes.
-        Includes MBR section color coding based on the MBR decoder specification.
+        Includes MBR section color coding with individual partition colors.
 
         Args:
             boot_sector: 512-byte boot sector data
@@ -83,6 +83,14 @@ class ReportGenerator:
         lines.append(header)
         lines.append("-" * len(header))
 
+        # Try to parse MBR structure for partition-specific coloring
+        mbr_structure = None
+        if use_colors:
+            try:
+                mbr_structure = self.mbr_decoder.parse_mbr(boot_sector)
+            except Exception as e:
+                logger.debug(f"Could not parse MBR for partition coloring: {e}")
+
         # Process 16 bytes per row (32 rows total for 512 bytes)
         for offset in range(0, len(boot_sector), 16):
             row_data = boot_sector[offset:offset + 16]
@@ -90,7 +98,7 @@ class ReportGenerator:
             # Format offset as zero-padded uppercase hex
             offset_str = f"0x{offset:04X}"
             
-            # Format hex bytes with color coding based on MBR sections
+            # Format hex bytes with color coding based on MBR sections and partitions
             hex_parts = []
             for i, byte in enumerate(row_data):
                 byte_offset = offset + i
@@ -98,10 +106,22 @@ class ReportGenerator:
                 
                 if use_colors:
                     try:
-                        section = self.mbr_decoder.get_section_type(byte_offset)
-                        color = self.section_colors.get(section, "")
-                        if color:
-                            hex_str = f"{color}{hex_str}{ANSIColors.RESET}"
+                        # Try partition-specific coloring first
+                        section, partition_num = self.mbr_decoder.get_partition_section_type(byte_offset)
+                        
+                        if section == MBRSection.PARTITION_TABLE and partition_num > 0:
+                            # Use partition-specific color
+                            _, ansi_color, _ = self.mbr_decoder.get_partition_color_info(
+                                byte_offset, mbr_structure
+                            )
+                            if ansi_color:
+                                hex_str = f"{ansi_color}{hex_str}{ANSIColors.RESET}"
+                        else:
+                            # Use original section-based coloring for non-partition areas
+                            section = self.mbr_decoder.get_section_type(byte_offset)
+                            color = self.section_colors.get(section, "")
+                            if color:
+                                hex_str = f"{color}{hex_str}{ANSIColors.RESET}"
                     except ValueError:
                         # Invalid offset, use default formatting
                         pass
@@ -127,7 +147,15 @@ class ReportGenerator:
             lines.append("Color Legend:")
             lines.append(f"  {self.section_colors[MBRSection.BOOT_CODE]}Boot Code (0x0000-0x01BD){ANSIColors.RESET}")
             lines.append(f"  {self.section_colors[MBRSection.DISK_SIGNATURE]}Disk Signature (0x01B8-0x01BB){ANSIColors.RESET}")
-            lines.append(f"  {self.section_colors[MBRSection.PARTITION_TABLE]}Partition Table (0x01BE-0x01FD){ANSIColors.RESET}")
+            
+            # Add partition-specific legend if MBR was parsed successfully
+            if mbr_structure:
+                partition_legend = self.mbr_decoder.generate_partition_color_legend(mbr_structure, "human")
+                lines.append(partition_legend)
+            else:
+                # Fallback to generic partition table color
+                lines.append(f"  {self.section_colors[MBRSection.PARTITION_TABLE]}Partition Table (0x01BE-0x01FD){ANSIColors.RESET}")
+            
             lines.append(f"  {self.section_colors[MBRSection.BOOT_SIGNATURE]}Boot Signature (0x01FE-0x01FF){ANSIColors.RESET}")
 
         return lines

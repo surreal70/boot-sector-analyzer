@@ -17,6 +17,47 @@ class MBRSection(Enum):
     BOOT_SIGNATURE = "boot_signature"
 
 
+class PartitionColors:
+    """Color scheme for individual partition entries."""
+    # HTML background colors
+    PARTITION_1 = "#FFE6E6"  # Light red
+    PARTITION_2 = "#E6F3FF"  # Light blue  
+    PARTITION_3 = "#E6FFE6"  # Light green
+    PARTITION_4 = "#FFF0E6"  # Light orange
+    EMPTY_PARTITION = "#F5F5F5"  # Light gray
+    
+    # ANSI colors for terminal output (imported from report_generator)
+    @staticmethod
+    def get_ansi_color(partition_number: int, is_empty: bool = False) -> str:
+        """Get ANSI color code for partition number."""
+        from .report_generator import ANSIColors
+        
+        if is_empty:
+            return ANSIColors.WHITE
+        
+        colors = {
+            1: ANSIColors.RED,
+            2: ANSIColors.BLUE,
+            3: ANSIColors.GREEN,
+            4: ANSIColors.YELLOW
+        }
+        return colors.get(partition_number, ANSIColors.WHITE)
+    
+    @staticmethod
+    def get_html_color(partition_number: int, is_empty: bool = False) -> str:
+        """Get HTML background color for partition number."""
+        if is_empty:
+            return PartitionColors.EMPTY_PARTITION
+        
+        colors = {
+            1: PartitionColors.PARTITION_1,
+            2: PartitionColors.PARTITION_2,
+            3: PartitionColors.PARTITION_3,
+            4: PartitionColors.PARTITION_4
+        }
+        return colors.get(partition_number, PartitionColors.EMPTY_PARTITION)
+
+
 @dataclass
 class PartitionEntry:
     """Represents a single partition table entry."""
@@ -365,6 +406,57 @@ class MBRDecoder:
         else:
             raise ValueError(f"Invalid MBR offset: {offset}")
     
+    def get_partition_section_type(self, offset: int) -> Tuple[MBRSection, int]:
+        """
+        Determine which partition entry a byte offset belongs to.
+        
+        Args:
+            offset: Byte offset within the 512-byte MBR
+            
+        Returns:
+            Tuple of (MBR section type, partition number 1-4, or 0 for non-partition sections)
+        """
+        if 0 <= offset <= 439:
+            return (MBRSection.BOOT_CODE, 0)
+        elif 440 <= offset <= 443:
+            return (MBRSection.DISK_SIGNATURE, 0)
+        elif 446 <= offset <= 509:
+            # Calculate which partition entry (0-3, return as 1-4)
+            partition_offset = offset - 446
+            partition_number = (partition_offset // 16) + 1
+            return (MBRSection.PARTITION_TABLE, partition_number)
+        elif 510 <= offset <= 511:
+            return (MBRSection.BOOT_SIGNATURE, 0)
+        else:
+            raise ValueError(f"Invalid MBR offset: {offset}")
+    
+    def get_partition_color_info(self, offset: int, mbr_structure: Optional[MBRStructure] = None) -> Tuple[str, str, int]:
+        """
+        Get color information for a specific byte offset.
+        
+        Args:
+            offset: Byte offset within the 512-byte MBR
+            mbr_structure: Optional MBR structure to check if partition is empty
+            
+        Returns:
+            Tuple of (HTML color, ANSI color, partition number)
+        """
+        section, partition_num = self.get_partition_section_type(offset)
+        
+        if section == MBRSection.PARTITION_TABLE and partition_num > 0:
+            # Check if partition is empty if MBR structure is provided
+            is_empty = False
+            if mbr_structure and partition_num <= len(mbr_structure.partition_entries):
+                partition_entry = mbr_structure.partition_entries[partition_num - 1]
+                is_empty = partition_entry.is_empty
+            
+            html_color = PartitionColors.get_html_color(partition_num, is_empty)
+            ansi_color = PartitionColors.get_ansi_color(partition_num, is_empty)
+            return (html_color, ansi_color, partition_num)
+        else:
+            # Non-partition sections use default colors
+            return ("", "", 0)
+    
     def generate_partition_report(self, mbr_structure: MBRStructure) -> str:
         """
         Generate human-readable partition table report.
@@ -430,3 +522,62 @@ class MBRDecoder:
             lines.append("✅ MBR structure validation passed")
         
         return "\n".join(lines)
+    
+    def generate_partition_color_legend(self, mbr_structure: MBRStructure, format_type: str = "human") -> str:
+        """
+        Generate color legend for partition table entries.
+        
+        Args:
+            mbr_structure: Parsed MBR structure
+            format_type: Output format ("human", "html")
+            
+        Returns:
+            Formatted color legend string
+        """
+        if format_type == "html":
+            return self._generate_html_partition_legend(mbr_structure)
+        else:
+            return self._generate_human_partition_legend(mbr_structure)
+    
+    def _generate_human_partition_legend(self, mbr_structure: MBRStructure) -> str:
+        """Generate human-readable partition color legend."""
+        lines = []
+        lines.append("Partition Color Legend:")
+        
+        for i, partition in enumerate(mbr_structure.partition_entries, 1):
+            if partition.is_empty:
+                status = "Empty"
+                color = PartitionColors.get_ansi_color(i, is_empty=True)
+            else:
+                part_type = self.partition_registry.get_partition_type(partition.system_id)
+                status = f"Type 0x{partition.system_id:02X} ({part_type})"
+                color = PartitionColors.get_ansi_color(i, is_empty=False)
+            
+            lines.append(f"  {color}Partition {i}{self._get_ansi_reset()}: {status}")
+        
+        return "\n".join(lines)
+    
+    def _generate_html_partition_legend(self, mbr_structure: MBRStructure) -> str:
+        """Generate HTML partition color legend."""
+        legend_items = []
+        
+        for i, partition in enumerate(mbr_structure.partition_entries, 1):
+            if partition.is_empty:
+                status = "Empty"
+                color = PartitionColors.get_html_color(i, is_empty=True)
+            else:
+                part_type = self.partition_registry.get_partition_type(partition.system_id)
+                status = f"Type 0x{partition.system_id:02X} ({part_type})"
+                color = PartitionColors.get_html_color(i, is_empty=False)
+            
+            legend_items.append(
+                f'<li><span style="background-color: {color}; padding: 2px 8px; margin-right: 10px;">■</span> '
+                f'Partition {i}: {status}</li>'
+            )
+        
+        return f'<ul>{"".join(legend_items)}</ul>'
+    
+    def _get_ansi_reset(self) -> str:
+        """Get ANSI reset code."""
+        from .report_generator import ANSIColors
+        return ANSIColors.RESET

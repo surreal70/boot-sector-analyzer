@@ -1,17 +1,19 @@
 # Boot Sector Analyzer
 
-**Version 0.1.1** - Enhanced Hexdump Release
+**Version 0.2.0** - HTML Reports & Disassembly Release
 
-A comprehensive Python tool for analyzing boot sectors from disk drives or boot sector image files. The system analyzes the structure and content of boot sectors, then cross-references findings against internet resources to identify suspicious deviations or potential security threats.
+A comprehensive Python tool for analyzing boot sectors from disk drives or boot sector image files. The system analyzes the structure and content of boot sectors, performs x86/x86-64 disassembly, and generates professional HTML reports with responsive design and interactive elements.
 
 ## Features
 
 - **Structure Analysis**: Parse and validate Master Boot Record (MBR) structure
 - **Content Analysis**: Calculate hashes, extract strings, detect suspicious patterns
+- **Boot Code Disassembly**: x86/x86-64 assembly analysis with pattern recognition
 - **Security Scanning**: Check against known malware signatures and bootkit patterns
 - **Threat Intelligence**: Query VirusTotal API for online threat information
-- **Hexdump Display**: Manual review with formatted 17-column table and ASCII representation
-- **Comprehensive Reporting**: Generate human-readable and JSON format reports
+- **HTML Reports**: Professional, responsive reports with syntax highlighting
+- **Hexdump Display**: Manual review with formatted 17-column table and MBR section highlighting
+- **Multi-Format Output**: Human-readable, JSON, and HTML report formats
 - **Command Line Interface**: Easy-to-use CLI with configuration file support
 
 ## Installation
@@ -43,10 +45,13 @@ boot-sector-analyzer boot_sector.img
 # Analyze the first sector of a disk device
 boot-sector-analyzer /dev/sda
 
-# Generate JSON output
+# Generate JSON output for automation
 boot-sector-analyzer -f json boot_sector.img
 
-# Verbose output
+# Generate HTML report with disassembly and responsive design
+boot-sector-analyzer -f html boot_sector.img > report.html
+
+# Verbose output with detailed logging
 boot-sector-analyzer -v boot_sector.img
 ```
 
@@ -82,9 +87,11 @@ boot_sector_analyzer/
 ├── input_handler.py         # Boot sector input handling
 ├── structure_analyzer.py    # MBR structure analysis
 ├── content_analyzer.py      # Content analysis and pattern detection
+├── disassembly_engine.py    # x86/x86-64 boot code disassembly
 ├── security_scanner.py      # Security threat detection
 ├── internet_checker.py      # Online threat intelligence
-├── report_generator.py      # Report generation
+├── report_generator.py      # Report generation (human, JSON)
+├── html_generator.py        # HTML report generation with responsive design
 ├── cli.py                   # Command line interface
 └── config.py                # Configuration management
 ```
@@ -132,6 +139,28 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 This tool is designed for security analysis purposes. Always ensure you have proper authorization before analyzing boot sectors from systems you do not own.
 
 ## Changelog
+
+### Version 0.2.0 (HTML Reports & Disassembly Release)
+
+**New Features:**
+- **HTML Report Generation**: Professional, self-contained HTML reports with embedded CSS
+- **Responsive Design**: HTML reports adapt to desktop, tablet, and mobile screen sizes
+- **Boot Code Disassembly**: Complete x86/x86-64 disassembly using Capstone engine
+- **Assembly Syntax Highlighting**: Color-coded assembly instructions in HTML reports
+- **Boot Pattern Recognition**: Intelligent identification of BIOS calls and boot operations
+- **Interactive HTML Elements**: Table of contents with anchor navigation
+- **MBR Section Highlighting**: Color-coded hexdump sections in HTML reports
+
+**Enhanced Components:**
+- HTMLGenerator class for comprehensive HTML document generation
+- DisassemblyEngine class with Capstone framework integration
+- Extended data models for disassembly results and HTML formatting
+- Multi-format support (human, JSON, HTML) with consistent data
+
+**Testing:**
+- 12 new property-based tests for HTML and disassembly validation
+- 155 total tests with complete coverage including integration testing
+- Real-world validation with actual boot sector samples
 
 ### Version 0.1.1 (Enhanced Hexdump Release)
 

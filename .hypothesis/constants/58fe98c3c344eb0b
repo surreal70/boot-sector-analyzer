@@ -1,4 +1,0 @@
-# file: /home/andreas/kiro/boot-sector-analyzer/boot_sector_analyzer/report_generator.py
-# hypothesis_version: 6.148.11
-
-['-', '=', 'Bootkit Indicators:', 'CONTENT ANALYSIS', 'DETECTED THREATS:', 'Detections:', 'Hashes:', 'SECURITY ANALYSIS', 'STRUCTURE ANALYSIS', 'SUMMARY', 'Suspicious Patterns:', 'THREAT INTELLIGENCE', 'URLs Found:', 'anomalies', 'boot_signature_valid', 'bootkit_indicators', 'cached', 'confidence', 'content_analysis', 'description', 'detected', 'detected_threats', 'detection_count', 'detections', 'disk_signature', 'entropy', 'hash_match', 'hashes', 'human', 'json', 'location', 'name', 'partition_count', 'permalink', 'query_timestamp', 'scan_date', 'security_analysis', 'severity', 'source', 'strings', 'structure_analysis', 'suspicious_patterns', 'threat_intelligence', 'threat_level', 'timestamp', 'total_engines', 'type', 'urls', 'virustotal', '⚠️', '✅', '❓', '🔴', '🚨']

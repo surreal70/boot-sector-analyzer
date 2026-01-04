@@ -97,6 +97,7 @@ class ContentAnalysis:
     suspicious_patterns: List[Pattern]
     entropy: float
     urls: List[str]
+    disassembly_result: Optional['DisassemblyResult'] = None
 
 
 @dataclass
@@ -142,6 +143,46 @@ class HexdumpData:
 
 
 @dataclass
+class Instruction:
+    """Represents a disassembled instruction."""
+
+    address: int  # Memory address (typically starting at 0x7C00)
+    bytes: bytes  # Raw instruction bytes
+    mnemonic: str  # Assembly mnemonic (e.g., "mov", "jmp")
+    operands: str  # Instruction operands
+    comment: Optional[str] = None  # Explanatory comment for boot sector operations
+
+
+@dataclass
+class InvalidInstruction:
+    """Represents an invalid instruction that couldn't be disassembled."""
+
+    address: int
+    bytes: bytes
+    reason: str  # Why disassembly failed
+
+
+@dataclass
+class BootPattern:
+    """Represents a recognized boot sector pattern."""
+
+    pattern_type: str  # "disk_read", "interrupt_call", "jump", etc.
+    description: str
+    instructions: List[Instruction]
+    significance: str  # Explanation of what this pattern does
+
+
+@dataclass
+class DisassemblyResult:
+    """Results of boot code disassembly."""
+
+    instructions: List[Instruction]
+    total_bytes_disassembled: int
+    invalid_instructions: List[InvalidInstruction]
+    boot_patterns: List[BootPattern]
+
+
+@dataclass
 class AnalysisResult:
     """Complete analysis results for a boot sector."""
 
@@ -151,4 +192,5 @@ class AnalysisResult:
     content_analysis: ContentAnalysis
     security_analysis: SecurityAnalysis
     hexdump: HexdumpData
+    disassembly: Optional[DisassemblyResult] = None
     threat_intelligence: Optional[ThreatIntelligence] = None

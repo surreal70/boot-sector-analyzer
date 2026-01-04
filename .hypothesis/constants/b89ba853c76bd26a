@@ -1,4 +1,0 @@
-# file: /home/andreas/kiro/boot-sector-analyzer/boot_sector_analyzer/structure_analyzer.py
-# hypothesis_version: 6.148.11
-
-[128, 192, 440, 444, 446, 510, 512, 21930, '<BBBBBBBBII', '<H', '<I', 'BOOT_SIGNATURE_ERROR', 'INVALID_DATA_TYPE', 'INVALID_ENTRY_SIZE', 'INVALID_SIZE', 'STRUCT_UNPACK_ERROR', 'Starting MBR parsing', 'actual_size', 'critical', 'data_type', 'error', 'exception_type', 'expected_size', 'high', 'medium', 'offset', 'partition_index']

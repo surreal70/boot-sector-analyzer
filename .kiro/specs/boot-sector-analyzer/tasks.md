@@ -1,4 +1,4 @@
-# Implementation Plan: Boot Sector Analyzer v0.1.1
+# Implementation Plan: Boot Sector Analyzer v0.2.0
 
 ## Overview
 
@@ -9,6 +9,9 @@ All core tasks have been successfully implemented and tested. This version provi
 
 **Version 0.1.1 Status: COMPLETED** ✅
 Enhanced hexdump functionality for manual review of boot sector raw data with formatted table display has been successfully implemented and tested.
+
+**Version 0.2.0 Status: COMPLETED** ✅
+HTML output format with embedded CSS styling and boot code disassembly with assembly syntax highlighting have been successfully implemented and tested.
 
 ## Tasks
 
@@ -257,17 +260,200 @@ Enhanced hexdump functionality for manual review of boot sector raw data with fo
 - [x] 13. Final checkpoint - Complete system validation
   - Ensure all tests pass, ask the user if questions arise.
 
+## Version 0.2.0 Tasks - HTML Output and Boot Code Disassembly
+
+- [x] 14. Add disassembly engine dependencies and setup
+  - Install capstone-engine library for x86/x86-64 disassembly
+  - Add HTML validation dependencies (beautifulsoup4, html5lib)
+  - Update requirements.txt with new dependencies
+  - _Requirements: 3.7, 11.1_
+
+- [x] 15. Implement boot code disassembly functionality
+  - [x] 15.1 Create DisassemblyEngine class with Capstone integration
+    - Initialize Capstone disassembly engine for x86 architecture
+    - Implement disassemble_16bit() method for typical boot sector code
+    - Implement disassemble_32bit() method for extended boot code
+    - Add format_instruction() method for structured output
+    - _Requirements: 11.1, 11.2, 11.3_
+
+  - [x] 15.2 Write property test for boot code disassembly completeness
+    - **Property 8: Boot code disassembly completeness**
+    - **Validates: Requirements 3.7, 3.8, 11.1, 11.3**
+
+  - [x] 15.3 Write property test for multi-mode disassembly support
+    - **Property 10: Multi-mode disassembly support**
+    - **Validates: Requirements 11.2**
+
+  - [x] 15.4 Implement boot pattern recognition and commenting
+    - Add identify_boot_patterns() method for common boot sector operations
+    - Implement add_comments() method for INT 13h, INT 10h, and other interrupts
+    - Add detection for jump instructions, disk operations, and control flow
+    - _Requirements: 11.7, 11.9_
+
+  - [x] 15.5 Write property test for boot pattern recognition
+    - **Property 11: Boot pattern recognition**
+    - **Validates: Requirements 11.7**
+
+  - [x] 15.6 Write property test for assembly instruction commenting
+    - **Property 12: Assembly instruction commenting**
+    - **Validates: Requirements 11.9**
+
+  - [x] 15.7 Implement graceful error handling for invalid instructions
+    - Add handling for unrecognized instruction bytes
+    - Display invalid instructions as raw hex data
+    - Ensure analysis continues despite disassembly failures
+    - _Requirements: 3.9, 11.6_
+
+  - [x] 15.8 Write property test for disassembly error handling
+    - **Property 9: Disassembly error handling**
+    - **Validates: Requirements 3.9, 11.6**
+
+- [x] 16. Update data models for disassembly support
+  - [x] 16.1 Add disassembly-related data classes
+    - Create DisassemblyResult, Instruction, InvalidInstruction, and BootPattern dataclasses
+    - Update ContentAnalysis to include disassembly_result field
+    - Update AnalysisResult to include disassembly field
+    - _Requirements: 3.7, 11.1_
+
+  - [x] 16.2 Update ContentAnalyzer to include disassembly
+    - Add disassemble_boot_code() method to ContentAnalyzer class
+    - Integrate DisassemblyEngine into content analysis workflow
+    - Ensure disassembly results are included in analysis output
+    - _Requirements: 3.7, 3.8, 11.1_
+
+- [x] 17. Implement HTML report generation
+  - [x] 17.1 Create HTMLGenerator class for HTML output
+    - Implement create_html_document() method with DOCTYPE and metadata
+    - Add embed_css_styles() method for self-contained styling
+    - Create responsive CSS for different screen sizes
+    - _Requirements: 6.7, 10.1, 10.2, 10.5_
+
+  - [x] 17.2 Write property test for HTML document structure
+    - **Property 21: HTML document structure**
+    - **Validates: Requirements 6.7, 10.1, 10.2**
+
+  - [x] 17.3 Write property test for HTML responsive design
+    - **Property 25: HTML responsive design**
+    - **Validates: Requirements 10.5**
+
+  - [x] 17.4 Implement threat level and syntax highlighting
+    - Add format_threat_level_badge() method with color coding
+    - Implement format_assembly_syntax_highlighting() for assembly code
+    - Use blue for instructions, green for registers, orange for values, red for addresses
+    - _Requirements: 6.8, 10.3, 11.4, 11.5_
+
+  - [x] 17.5 Write property test for HTML color coding
+    - **Property 22: HTML color coding**
+    - **Validates: Requirements 6.8, 10.3, 11.4, 11.5**
+
+  - [x] 17.6 Implement interactive HTML elements
+    - Add create_table_of_contents() method with anchor links
+    - Implement navigation functionality for report sections
+    - Add copyable formatting for hash values and technical data
+    - _Requirements: 6.9, 10.7, 10.8_
+
+  - [x] 17.7 Write property test for HTML interactive elements
+    - **Property 23: HTML interactive elements**
+    - **Validates: Requirements 6.9, 10.7**
+
+  - [x] 17.8 Implement HTML formatting for technical data
+    - Add format_hexdump_with_colors() method for MBR section highlighting
+    - Implement monospace formatting for code, hex data, and hash values
+    - Add proper alignment and indentation for assembly code
+    - _Requirements: 10.4, 10.6, 10.8, 11.8_
+
+  - [x] 17.9 Write property test for HTML monospace formatting
+    - **Property 24: HTML monospace formatting**
+    - **Validates: Requirements 10.4, 10.8, 11.8**
+
+  - [x] 17.10 Write property test for HTML MBR section highlighting
+    - **Property 26: HTML MBR section highlighting**
+    - **Validates: Requirements 10.6**
+
+  - [x] 17.11 Add HTML metadata and header information
+    - Include generation timestamp and analyzer version in HTML header
+    - Add proper HTML meta tags for character encoding and viewport
+    - Ensure HTML documents are self-contained and portable
+    - _Requirements: 10.9_
+
+  - [x] 17.12 Write property test for HTML metadata inclusion
+    - **Property 27: HTML metadata inclusion**
+    - **Validates: Requirements 10.9**
+
+- [x] 18. Update ReportGenerator for multi-format support
+  - [x] 18.1 Extend ReportGenerator to support HTML format
+    - Update generate_report() method to handle "html" format option
+    - Integrate HTMLGenerator into report generation workflow
+    - Ensure all analysis data is properly formatted for HTML output
+    - _Requirements: 6.5, 7.7_
+
+  - [x] 18.2 Write property test for multi-format report support
+    - **Property 19: Multi-format report support**
+    - **Validates: Requirements 6.5, 7.7**
+
+  - [x] 18.3 Add assembly code formatting for all output formats
+    - Update human-readable format to include disassembly section
+    - Add disassembly data to JSON output format
+    - Implement syntax highlighting for HTML assembly display
+    - _Requirements: 11.3, 11.4, 11.8_
+
+- [x] 19. Update command line interface for HTML support
+  - [x] 19.1 Update CLI argument parsing for HTML format
+    - Modify --format argument choices to include "html"
+    - Update help text and examples to show HTML format usage
+    - Ensure proper validation of format arguments
+    - _Requirements: 7.7_
+
+  - [x] 19.2 Update CLI examples and documentation
+    - Add HTML format examples to CLI help text
+    - Update usage examples to demonstrate new functionality
+    - Ensure error messages are clear for invalid format options
+    - _Requirements: 7.7_
+
+- [x] 20. Checkpoint - Ensure disassembly and HTML generation work
+  - Ensure all new tests pass, ask the user if questions arise.
+
+- [x] 21. Integration testing for new features
+  - [x] 21.1 Write integration tests for complete HTML workflow
+    - Test end-to-end HTML report generation with sample boot sectors
+    - Verify HTML structure, CSS embedding, and syntax highlighting
+    - Test responsive design and interactive elements
+    - _Requirements: All HTML requirements_
+
+  - [x] 21.2 Write integration tests for disassembly workflow
+    - Test complete disassembly pipeline with known boot sector samples
+    - Verify pattern recognition and comment generation
+    - Test error handling with invalid instruction sequences
+    - _Requirements: All disassembly requirements_
+
+  - [x] 21.3 Write cross-format compatibility tests
+    - Ensure all three output formats (human, JSON, HTML) contain equivalent data
+    - Test format switching with identical input data
+    - Verify consistency across different output formats
+    - _Requirements: 6.5, 7.7_
+
+- [x] 22. Final checkpoint - Complete v0.2.0 system validation
+  - Ensure all tests pass, ask the user if questions arise.
+
 ## Notes
 
 - **Version 0.1.0 Complete**: All core tasks successfully implemented and tested
 - **Version 0.1.1 Complete**: Enhanced hexdump functionality successfully implemented and tested
+- **Version 0.2.0 Complete**: HTML output and boot code disassembly functionality successfully implemented and tested
 - Each task references specific requirements for traceability
 - Checkpoints ensure incremental validation throughout development
 - Property tests validate universal correctness properties using hypothesis library
 - Unit tests validate specific examples and edge cases
+- Integration tests validate end-to-end workflows and cross-format compatibility
 - The implementation uses Python 3.8+ with modern features like dataclasses
 - VirusTotal integration requires API key configuration
 - All components include comprehensive error handling and logging
-- 26 correctness properties validated through property-based testing (21 from v0.1.0 + 5 new hexdump properties)
+- **v0.2.0**: 32 correctness properties validated (27 from previous versions + 5 new HTML/disassembly properties)
+- **Total Test Coverage**: 155 tests covering all functionality with property-based, unit, and integration testing
+- **v0.1.x**: 26 correctness properties validated (21 from v0.1.0 + 5 hexdump properties)
+- **v0.2.0**: 38 total correctness properties (26 existing + 12 new for HTML/disassembly)
 - Complete test coverage with both unit and integration tests
 - Hexdump feature provides 17-column table format with offset and ASCII representation
+- **New in v0.2.0**: HTML output with embedded CSS, responsive design, and syntax highlighting
+- **New in v0.2.0**: x86/x86-64 boot code disassembly with pattern recognition and commenting
+- **Dependencies**: capstone-engine for disassembly, beautifulsoup4 and html5lib for HTML validation

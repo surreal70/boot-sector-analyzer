@@ -73,6 +73,7 @@ Examples:
   %(prog)s /dev/sda                    # Analyze first sector of /dev/sda
   %(prog)s boot_sector.img             # Analyze boot sector image file
   %(prog)s -v -f json boot.img         # Verbose output in JSON format
+  %(prog)s -f html -o report.html boot.img # Generate HTML report
   %(prog)s --config config.ini boot.img # Use configuration file
         """,
     )
@@ -91,7 +92,7 @@ Examples:
     parser.add_argument(
         "-f",
         "--format",
-        choices=["human", "json"],
+        choices=["human", "json", "html"],
         default="human",
         help="Output format (default: human)",
     )

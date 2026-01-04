@@ -1,4 +1,0 @@
-# file: /home/andreas/kiro/boot-sector-analyzer/boot_sector_analyzer/models.py
-# hypothesis_version: 6.148.11
-
-['critical', 'high', 'low', 'medium']

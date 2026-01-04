@@ -107,7 +107,7 @@ class TestStructureAnalyzerProperties:
     def test_boot_signature_validation(self, boot_sector_data, boot_signature):
         """
         Property 3: Boot signature validation
-        For any boot sector, the Structure_Analyzer should correctly validate the boot signature (0x55AA) 
+        For any boot sector, the Structure_Analyzer should correctly validate the boot signature (0x55AA or 0xAA55) 
         and flag missing or incorrect signatures as structural anomalies.
         **Validates: Requirements 2.2, 2.6**
         **Feature: boot-sector-analyzer, Property 3: Boot signature validation**
@@ -118,15 +118,15 @@ class TestStructureAnalyzerProperties:
         # Validate the boot signature
         is_valid = self.analyzer.validate_boot_signature(boot_sector)
         
-        # The signature should be valid only if it equals 0x55AA
-        expected_valid = (boot_signature == 0x55AA)
+        # The signature should be valid if it equals 0x55AA or 0xAA55
+        expected_valid = (boot_signature == 0x55AA or boot_signature == 0xAA55)
         assert is_valid == expected_valid
         
         # Test with MBR parsing to check anomaly detection
         mbr = self.analyzer.parse_mbr(boot_sector)
         anomalies = self.analyzer.detect_anomalies(mbr)
         
-        if boot_signature != 0x55AA:
+        if boot_signature not in [0x55AA, 0xAA55]:
             # Should have an invalid boot signature anomaly
             signature_anomalies = [a for a in anomalies if a.type == "invalid_boot_signature"]
             assert len(signature_anomalies) > 0

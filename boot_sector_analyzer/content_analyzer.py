@@ -8,6 +8,7 @@ from collections import Counter
 from typing import Dict, List
 
 from .models import Pattern, ContentAnalysis
+from .disassembly_engine import DisassemblyEngine
 from .exceptions import (
     ContentAnalysisError,
     AnalysisError
@@ -18,6 +19,10 @@ logger = logging.getLogger(__name__)
 
 class ContentAnalyzer:
     """Analyzes boot sector content for suspicious patterns and characteristics."""
+
+    def __init__(self):
+        """Initialize ContentAnalyzer with disassembly engine."""
+        self.disassembly_engine = DisassemblyEngine()
 
     def analyze_content(self, boot_sector: bytes) -> ContentAnalysis:
         """
@@ -48,6 +53,10 @@ class ContentAnalyzer:
             # Calculate entropy
             entropy = self.analyze_entropy(boot_sector)
             
+            # Disassemble boot code (first 446 bytes)
+            boot_code = boot_sector[:446]  # Boot code region
+            disassembly_result = self.disassemble_boot_code(boot_code)
+            
             logger.info(f"Content analysis completed: {len(strings)} strings, {len(urls)} URLs, {len(suspicious_patterns)} patterns, entropy={entropy:.2f}")
             
             return ContentAnalysis(
@@ -55,7 +64,8 @@ class ContentAnalyzer:
                 strings=strings,
                 suspicious_patterns=suspicious_patterns,
                 entropy=entropy,
-                urls=urls
+                urls=urls,
+                disassembly_result=disassembly_result
             )
             
         except Exception as e:
@@ -500,4 +510,52 @@ class ContentAnalyzer:
                 error_msg,
                 error_code="PARTITION_TYPE_VALIDATION_ERROR",
                 details={"partition_type": partition_type, "exception_type": type(e).__name__, "error": str(e)}
+            )
+
+    def disassemble_boot_code(self, boot_code: bytes):
+        """
+        Disassemble x86/x86-64 assembly instructions from boot code.
+        
+        Args:
+            boot_code: Boot code bytes to disassemble (typically first 446 bytes)
+            
+        Returns:
+            DisassemblyResult with instructions and patterns
+            
+        Raises:
+            ContentAnalysisError: If disassembly fails
+        """
+        logger.debug("Starting boot code disassembly")
+        
+        if not isinstance(boot_code, bytes):
+            error_msg = f"Boot code must be bytes, got {type(boot_code)}"
+            logger.error(error_msg)
+            raise ContentAnalysisError(
+                error_msg,
+                error_code="INVALID_DATA_TYPE",
+                details={"data_type": str(type(boot_code))}
+            )
+        
+        try:
+            # Use disassembly engine with error handling
+            # Boot sectors typically use 16-bit mode
+            disassembly_result = self.disassembly_engine.disassemble_with_error_handling(
+                boot_code, 
+                base_address=0x7C00,  # Standard boot sector load address
+                prefer_16bit=True
+            )
+            
+            logger.info(f"Disassembly completed: {len(disassembly_result.instructions)} instructions, "
+                       f"{len(disassembly_result.invalid_instructions)} invalid, "
+                       f"{len(disassembly_result.boot_patterns)} patterns")
+            
+            return disassembly_result
+            
+        except Exception as e:
+            error_msg = f"Failed to disassemble boot code: {e}"
+            logger.error(error_msg, exc_info=True)
+            raise ContentAnalysisError(
+                error_msg,
+                error_code="DISASSEMBLY_ERROR",
+                details={"exception_type": type(e).__name__, "error": str(e)}
             )

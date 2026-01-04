@@ -5,6 +5,80 @@ All notable changes to the Boot Sector Analyzer project will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-01-04
+
+### Added
+- **HTML Report Generation**: Professional, self-contained HTML reports with embedded CSS
+- **Responsive Design**: HTML reports adapt to desktop, tablet, and mobile screen sizes
+- **Boot Code Disassembly**: Complete x86/x86-64 disassembly using Capstone engine
+- **Assembly Syntax Highlighting**: Color-coded assembly instructions in HTML reports
+  - Blue for instructions (mov, jmp, int, call, etc.)
+  - Green for registers (ax, bx, cx, dx, si, di, etc.)
+  - Orange for immediate values (0x13, 0x7C00, constants)
+  - Red for memory addresses ([bx+si], [0x7C5A], etc.)
+- **Boot Pattern Recognition**: Intelligent identification of common boot sector operations
+  - BIOS interrupt calls (INT 13h disk services, INT 10h video services, INT 18h ROM BASIC)
+  - Disk read operations and error handling patterns
+  - Control flow analysis (jumps, loops, calls, returns)
+  - Stack operations and register manipulation
+- **Interactive HTML Elements**: Table of contents with anchor navigation
+- **MBR Section Highlighting**: Color-coded hexdump sections in HTML reports
+  - Light blue for boot code region (0x0000-0x01BD)
+  - Light yellow for disk signature (0x01B8-0x01BB)
+  - Light green for partition table (0x01BE-0x01FD)
+  - Light red for boot signature (0x01FE-0x01FF)
+- **Professional Styling**: Modern typography, threat level badges, monospace formatting
+- **Multi-Mode Disassembly**: Support for both 16-bit and 32-bit x86 instruction modes
+
+### Enhanced
+- **HTMLGenerator Class**: Comprehensive HTML document generation with embedded CSS
+- **DisassemblyEngine Class**: Professional disassembly using Capstone framework
+- **Data Models**: Extended models for disassembly results and HTML formatting
+- **Report Generator**: Multi-format support (human, JSON, HTML) with consistent data
+- **Error Handling**: Graceful handling of invalid instruction sequences
+- **Testing Framework**: 38 total correctness properties (12 new for HTML/disassembly)
+
+### Dependencies
+- **capstone>=5.0.0**: Professional x86/x86-64 disassembly engine
+- **beautifulsoup4>=4.11.0**: HTML structure validation and parsing
+- **html5lib>=1.1**: HTML5 compliance validation
+
+### Testing
+- **12 New Property-Based Tests**: Comprehensive HTML and disassembly validation
+  - Property 21: HTML document structure validation
+  - Property 22: HTML color coding verification
+  - Property 23: Interactive elements testing
+  - Property 24: Monospace formatting validation
+  - Property 25: Responsive design verification
+  - Property 26: MBR section highlighting
+  - Property 27: HTML metadata inclusion
+  - Property 8: Boot code disassembly completeness
+  - Property 9: Disassembly error handling
+  - Property 10: Multi-mode disassembly support
+  - Property 11: Boot pattern recognition
+  - Property 12: Assembly instruction commenting
+- **155 Total Tests**: Complete coverage including integration and cross-format compatibility
+- **HTML Validation**: Structure, CSS embedding, and responsive design testing
+- **Real-World Testing**: Validated with actual boot sector samples (GPT, Ventoy, NVME)
+
+### Requirements
+- **Requirements 6.7-6.9**: HTML report generation with styling and interactivity
+- **Requirements 10.1-10.9**: HTML formatting, responsive design, and metadata
+- **Requirements 11.1-11.9**: Boot code disassembly and assembly highlighting
+- **Requirements 3.7-3.9**: Enhanced content analysis with disassembly integration
+
+### Performance
+- **Optimized Disassembly**: Efficient Capstone engine initialization and usage
+- **CSS Embedding**: Self-contained HTML reports with no external dependencies
+- **Memory Efficiency**: Streamlined processing for large boot sector analysis
+- **Cross-Format Consistency**: Unified data across human, JSON, and HTML formats
+
+### Backward Compatibility
+- **Full Compatibility**: All v0.1.x features and command-line options preserved
+- **Existing Formats**: Human-readable and JSON outputs remain unchanged
+- **Configuration**: All existing configuration files and API keys continue to work
+- **Migration Path**: Seamless upgrade from v0.1.x to v0.2.0
+
 ## [0.1.1] - 2026-01-04
 
 ### Added

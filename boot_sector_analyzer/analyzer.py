@@ -101,6 +101,7 @@ class BootSectorAnalyzer:
                 content_analysis=content_analysis,
                 security_analysis=security_analysis,
                 hexdump=hexdump_data,
+                disassembly=content_analysis.disassembly_result,
                 threat_intelligence=threat_intelligence
             )
             
@@ -362,8 +363,8 @@ class BootSectorAnalyzer:
         try:
             logger.debug("Generating hexdump data")
             
-            # Generate formatted hexdump lines
-            formatted_lines = self.report_generator.format_hexdump_table(boot_sector_data)
+            # Generate formatted hexdump lines (without colors for backward compatibility)
+            formatted_lines = self.report_generator.format_hexdump_table(boot_sector_data, use_colors=False)
             
             # Generate ASCII representation
             ascii_representation = self.report_generator.format_ascii_column(boot_sector_data)

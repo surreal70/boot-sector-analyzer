@@ -1,4 +1,0 @@
-# file: /home/andreas/kiro/boot-sector-analyzer/boot_sector_analyzer/input_handler.py
-# hypothesis_version: 6.148.11
-
-[512, 21930, '/dev/', 'EMPTY_SOURCE', 'FILE_NOT_FOUND', 'INVALID_DATA_TYPE', 'INVALID_SIZE', 'IO_ERROR', 'OS_ERROR', 'PERMISSION_DENIED', 'UNEXPECTED_ERROR', 'actual_size', 'bytes_read', 'data_type', 'errno', 'exception_type', 'expected_size', 'gid', 'little', 'rb', 'resolved_path', 'source', 'system_error', 'uid']

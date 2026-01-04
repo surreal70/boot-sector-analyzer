@@ -172,11 +172,11 @@ class InputHandler:
         # Check for boot signature at the end
         if len(data) >= 2:
             signature = int.from_bytes(data[-2:], byteorder="little")
-            if signature == 0x55AA:
-                logger.debug("Valid boot signature found (0x55AA)")
+            if signature in [0x55AA, 0xAA55]:
+                logger.debug(f"Valid boot signature found: 0x{signature:04X}")
                 return True
             else:
-                logger.warning(f"Invalid boot signature: 0x{signature:04X} (expected 0x55AA)")
+                logger.warning(f"Invalid boot signature: 0x{signature:04X} (expected 0x55AA or 0xAA55)")
                 # Still consider it valid for analysis even without signature
                 return True
 

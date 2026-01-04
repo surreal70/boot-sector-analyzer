@@ -1,0 +1,51 @@
+# Boot Sector Analyzer Configuration Template
+# Copy this file to config.ini and modify as needed
+
+[api]
+# VirusTotal API key for threat intelligence
+# Get your free API key from: https://www.virustotal.com/gui/join-us
+virustotal_api_key = your_api_key_here
+
+[analysis]
+# Default output format (human, json, html)
+default_format = human
+
+# Enable verbose logging by default
+verbose = false
+
+# Enable quiet mode by default
+quiet = false
+
+[cache]
+# Directory for caching threat intelligence results
+cache_dir = ~/.boot_sector_analyzer/cache
+
+# Cache expiration time in hours
+cache_expiration = 24
+
+[logging]
+# Default logging level (DEBUG, INFO, WARNING, ERROR)
+log_level = INFO
+
+# Log file location (leave empty to disable file logging)
+log_file = 
+
+[network]
+# Timeout for network requests in seconds
+timeout = 30
+
+# Number of retries for failed requests
+retries = 3
+
+# Enable SSL certificate verification
+verify_ssl = true
+
+[output]
+# Default output directory for reports
+output_dir = ./reports
+
+# Include hexdump in reports by default
+include_hexdump = true
+
+# Include disassembly in reports by default
+include_disassembly = true

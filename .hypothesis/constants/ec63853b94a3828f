@@ -1,4 +1,0 @@
-# file: /home/andreas/kiro/boot-sector-analyzer/boot_sector_analyzer/cli.py
-# hypothesis_version: 6.148.11
-
-['%Y-%m-%d %H:%M:%S', '--api-key', '--cache-dir', '--config', '--format', '--log-level', '--no-internet', '--output', '--quiet', '--verbose', '--version', '-f', '-o', '-q', '-v', '/dev/', '?', 'CONFIG_LOAD_ERROR', 'DEBUG', 'ERROR', 'INFO', 'Invalid arguments', 'REPORT_WRITE_ERROR', 'WARNING', '__main__', 'api', 'boot-sector-analyzer', 'cache', 'config.ini', 'config_path', 'directory', 'error', 'human', 'json', 'output_path', 'source', 'store_true', 'utf-8', 'version', 'virustotal_api_key', 'w']

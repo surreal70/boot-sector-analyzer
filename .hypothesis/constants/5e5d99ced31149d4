@@ -1,4 +1,0 @@
-# file: /home/andreas/kiro/boot-sector-analyzer/boot_sector_analyzer/__init__.py
-# hypothesis_version: 6.148.11
-
-['0.1.0', 'AnalysisResult', 'BootSectorAnalyzer', 'ThreatLevel']

@@ -1,10 +1,10 @@
-# Requirements Document - Boot Sector Analyzer v0.1.1
+# Requirements Document - Boot Sector Analyzer v0.2.0
 
 ## Introduction
 
 A Python console application that performs comprehensive analysis of boot sectors from disk drives or boot sector image files. The system analyzes the structure and content of boot sectors, then cross-references findings against internet resources to identify suspicious deviations or potential security threats.
 
-**Version 0.1.1** provides complete implementation of all specified requirements with comprehensive testing and validation, including enhanced hexdump functionality for manual boot sector review.
+**Version 0.2.0** provides complete implementation of all specified requirements with comprehensive testing and validation, including enhanced hexdump functionality for manual boot sector review, boot code disassembly with assembly syntax highlighting, and HTML report generation with interactive elements and responsive design.
 
 ## Glossary
 
@@ -17,6 +17,9 @@ A Python console application that performs comprehensive analysis of boot sector
 - **Report_Generator**: Component that creates analysis reports
 - **Boot_Sector_Image**: A file containing a copy of a boot sector (typically 512 bytes)
 - **Hexdump**: A hexadecimal representation of binary data displayed in a structured table format for manual review
+- **HTML_Report**: A self-contained HTML document containing analysis results with embedded styling and interactive elements
+- **Boot_Code_Disassembly**: The process of converting machine code bytes into human-readable assembly language instructions
+- **Assembly_Syntax_Highlighting**: Color coding of assembly language elements (instructions, registers, operands) for improved readability
 
 ## Requirements
 
@@ -57,6 +60,9 @@ A Python console application that performs comprehensive analysis of boot sector
 4. WHEN analyzing partition entries, THE Content_Analyzer SHALL validate partition type codes
 5. THE Content_Analyzer SHALL detect unusual boot code sizes or unexpected data patterns
 6. WHEN analyzing boot code, THE Content_Analyzer SHALL identify potential shellcode patterns
+7. WHEN analyzing boot code, THE Content_Analyzer SHALL disassemble x86/x86-64 assembly instructions from the boot code region
+8. WHEN displaying disassembled code, THE Content_Analyzer SHALL provide instruction addresses, opcodes, and mnemonics
+9. WHEN disassembly fails, THE Content_Analyzer SHALL gracefully handle invalid instructions and continue analysis
 
 ### Requirement 4: Security Threat Detection
 
@@ -94,8 +100,11 @@ A Python console application that performs comprehensive analysis of boot sector
 2. WHEN generating reports, THE Report_Generator SHALL include all structural findings
 3. WHEN generating reports, THE Report_Generator SHALL include content analysis results
 4. WHEN generating reports, THE Report_Generator SHALL include security assessment findings
-5. THE Report_Generator SHALL support both human-readable and JSON output formats
+5. THE Report_Generator SHALL support human-readable, JSON, and HTML output formats
 6. WHEN threats are detected, THE Report_Generator SHALL highlight critical findings prominently
+7. WHEN generating HTML reports, THE Report_Generator SHALL create a self-contained HTML document with embedded CSS styling
+8. WHEN generating HTML reports, THE Report_Generator SHALL use color coding to highlight threat levels and important sections
+9. WHEN generating HTML reports, THE Report_Generator SHALL include interactive elements for better data visualization
 
 ### Requirement 7: Command Line Interface
 
@@ -109,6 +118,7 @@ A Python console application that performs comprehensive analysis of boot sector
 4. THE Boot_Sector_Analyzer SHALL support quiet modes for automated processing
 5. WHEN invalid arguments are provided, THE Boot_Sector_Analyzer SHALL display helpful error messages
 6. THE Boot_Sector_Analyzer SHALL support configuration file options for API keys and settings
+7. THE Boot_Sector_Analyzer SHALL support --format option with choices: human, json, html
 
 ### Requirement 8: Hexdump Display for Manual Review
 
@@ -123,6 +133,38 @@ A Python console application that performs comprehensive analysis of boot sector
 5. THE Report_Generator SHALL format hex offsets as zero-padded uppercase hexadecimal (e.g., 0x0000, 0x0010)
 6. WHEN a byte is not printable ASCII, THE Report_Generator SHALL display a dot (.) in the ASCII column
 7. THE Report_Generator SHALL include the hexdump in both human-readable and JSON output formats
+
+### Requirement 11: Boot Code Disassembly and Assembly Highlighting
+
+**User Story:** Als Sicherheitsanalyst möchte ich den Boot-Code als Assembly-Anweisungen sehen, damit ich verdächtige Instruktionen und Malware-Signaturen identifizieren kann.
+
+#### Acceptance Criteria
+
+1. WHEN analyzing boot code, THE Content_Analyzer SHALL disassemble the first 446 bytes as x86 assembly instructions
+2. WHEN disassembling code, THE Content_Analyzer SHALL handle both 16-bit and 32-bit instruction modes appropriately
+3. WHEN displaying disassembled code in human format, THE Content_Analyzer SHALL show address, hex bytes, and assembly mnemonics
+4. WHEN displaying disassembled code in HTML format, THE Content_Analyzer SHALL apply syntax highlighting with different colors for instructions, registers, and operands
+5. THE Content_Analyzer SHALL use color coding: blue for instructions, green for registers, orange for immediate values, red for memory addresses
+6. WHEN invalid or unrecognized instructions are encountered, THE Content_Analyzer SHALL display them as raw hex data
+7. THE Content_Analyzer SHALL identify and highlight common boot code patterns (jump instructions, interrupt calls, disk operations)
+8. WHEN generating HTML reports, THE Content_Analyzer SHALL format assembly code in a monospace font with proper indentation
+9. THE Content_Analyzer SHALL include instruction comments for common boot sector operations (INT 13h, INT 10h, etc.)
+
+### Requirement 10: HTML Report Formatting
+
+**User Story:** Als Sicherheitsanalyst möchte ich Analyseberichte im HTML-Format erhalten, damit ich sie in Webbrowsern anzeigen und professionell präsentieren kann.
+
+#### Acceptance Criteria
+
+1. WHEN HTML format is selected, THE Report_Generator SHALL create a complete HTML document with DOCTYPE declaration
+2. THE Report_Generator SHALL embed CSS styling directly in the HTML document for self-contained reports
+3. WHEN displaying threat levels in HTML, THE Report_Generator SHALL use color-coded badges (green for low, yellow for medium, red for high, dark red for critical)
+4. WHEN displaying hexdump data in HTML, THE Report_Generator SHALL format it as a monospace table with proper alignment
+5. THE Report_Generator SHALL include responsive CSS to ensure reports display correctly on different screen sizes
+6. WHEN displaying MBR sections in HTML hexdump, THE Report_Generator SHALL use background colors to highlight different sections
+7. THE Report_Generator SHALL include a table of contents with anchor links for easy navigation
+8. WHEN displaying hash values in HTML, THE Report_Generator SHALL format them as copyable monospace text
+9. THE Report_Generator SHALL include metadata such as generation timestamp and analyzer version in the HTML header
 
 ### Requirement 9: Error Handling and Logging
 

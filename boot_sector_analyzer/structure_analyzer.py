@@ -195,7 +195,7 @@ class StructureAnalyzer:
 
     def validate_boot_signature(self, boot_sector: bytes) -> bool:
         """
-        Check for valid boot signature (0x55AA).
+        Check for valid boot signature (0x55AA or 0xAA55).
 
         Args:
             boot_sector: 512 bytes of boot sector data
@@ -223,12 +223,12 @@ class StructureAnalyzer:
 
         try:
             signature = struct.unpack("<H", boot_sector[510:512])[0]
-            is_valid = signature == 0x55AA
+            is_valid = signature in [0x55AA, 0xAA55]
 
             if is_valid:
-                logger.debug("Valid boot signature found (0x55AA)")
+                logger.debug(f"Valid boot signature found (0x{signature:04X})")
             else:
-                logger.warning(f"Invalid boot signature: 0x{signature:04X} (expected 0x55AA)")
+                logger.warning(f"Invalid boot signature: 0x{signature:04X} (expected 0x55AA or 0xAA55)")
 
             return is_valid
             
@@ -297,8 +297,8 @@ class StructureAnalyzer:
         logger.debug("Starting structure analysis")
         
         try:
-            # Validate boot signature
-            is_valid_signature = mbr.boot_signature == 0x55AA
+            # Validate boot signature (accept both 0x55AA and 0xAA55)
+            is_valid_signature = mbr.boot_signature in [0x55AA, 0xAA55]
             
             # Count active partitions
             partition_count = sum(1 for p in mbr.partition_table if p.size_sectors > 0)
@@ -341,11 +341,11 @@ class StructureAnalyzer:
         anomalies = []
 
         try:
-            # Check boot signature
-            if mbr.boot_signature != 0x55AA:
+            # Check boot signature (accept both 0x55AA and 0xAA55)
+            if mbr.boot_signature not in [0x55AA, 0xAA55]:
                 anomaly = Anomaly(
                     type="invalid_boot_signature",
-                    description=f"Invalid boot signature: 0x{mbr.boot_signature:04X} (expected 0x55AA)",
+                    description=f"Invalid boot signature: 0x{mbr.boot_signature:04X} (expected 0x55AA or 0xAA55)",
                     severity="high",
                     location=510,
                 )

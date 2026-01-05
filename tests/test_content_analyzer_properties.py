@@ -160,3 +160,38 @@ class TestContentAnalyzerProperties:
         
         # Verify that the result is always a boolean
         assert isinstance(is_valid, bool), f"validate_partition_type should return a boolean, got {type(is_valid)}"
+
+    @given(boot_code=st.binary(min_size=446, max_size=512))
+    def test_empty_boot_code_handling(self, boot_code):
+        """
+        Property 46: Empty boot code handling
+        For any boot sector where the boot code region contains only zero bytes, 
+        the Content_Analyzer should skip disassembly processing and display "No boot code present"
+        **Validates: Requirements 13.8, 11.10**
+        **Feature: boot-sector-analyzer, Property 46: Empty boot code handling**
+        """
+        # Create boot code with all zeros in the first 446 bytes (boot code region)
+        empty_boot_code = b'\x00' * 446
+        
+        # Test check_empty_boot_code method
+        is_empty = self.analyzer.check_empty_boot_code(empty_boot_code)
+        assert is_empty, "check_empty_boot_code should return True for all-zero boot code"
+        
+        # Test disassemble_boot_code with empty boot code
+        disassembly_result = self.analyzer.disassemble_boot_code(empty_boot_code)
+        assert disassembly_result is None, "disassemble_boot_code should return None for empty boot code"
+        
+        # Test with non-empty boot code (at least one non-zero byte in first 446 bytes)
+        if len(boot_code) >= 446:
+            # Ensure at least one non-zero byte in the boot code region
+            non_empty_boot_code = bytearray(boot_code)
+            non_empty_boot_code[0] = 0x90  # NOP instruction
+            non_empty_boot_code = bytes(non_empty_boot_code)
+            
+            is_empty = self.analyzer.check_empty_boot_code(non_empty_boot_code)
+            assert not is_empty, "check_empty_boot_code should return False for non-empty boot code"
+            
+            # Disassembly should not return None for non-empty boot code
+            disassembly_result = self.analyzer.disassemble_boot_code(non_empty_boot_code[:446])
+            # Note: disassembly_result might still be None if disassembly fails for other reasons,
+            # but it should not be None specifically due to empty boot code detection

@@ -1,14 +1,30 @@
-# Boot Sector Analyzer
+# 🔍 Boot Sector Analyzer
 
-**Version 0.2.2** - Enhanced HTML Styling Release
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-0.3.0-orange.svg)](VERSION)
+[![Security](https://img.shields.io/badge/Security-Analysis-red.svg)](#security)
+[![Tests](https://img.shields.io/badge/Tests-217%20Passing-brightgreen.svg)](#development)
 
-A comprehensive Python tool for analyzing boot sectors from disk drives or boot sector image files. The system analyzes the structure and content of boot sectors, performs x86/x86-64 disassembly, and generates professional HTML reports with responsive design and interactive elements.
+**Version 0.3.0** - Volume Boot Record (VBR) Analysis Release
 
-## Features
+A comprehensive Python tool for analyzing boot sectors from disk drives or boot sector image files. The system analyzes the structure and content of both Master Boot Records (MBRs) and Volume Boot Records (VBRs), performs x86/x86-64 disassembly, and generates professional HTML reports with responsive design and interactive elements.
+
+## ⚠️ Important Notice
+
+> **ATTENTION**: Please read carefully before using this tool
+> 
+> - **🧪 Experimental Features**: VBR analysis and advanced threat detection are still experimental. Results should be verified through additional analysis methods.
+> - **🔐 Root Access Required**: For direct device analysis (e.g., `/dev/sda`), this script must be run as root to access raw disk devices. **BE EXTREMELY CAREFUL** when running as root - ensure you're analyzing the correct device to avoid data loss.
+> - **📁 Image Files**: For safety, consider using disk image files instead of direct device access when possible.
+
+## ✨ Features
 
 - **Structure Analysis**: Parse and validate Master Boot Record (MBR) structure
+- **VBR Analysis**: Detect and analyze Volume Boot Records from valid partitions
 - **Content Analysis**: Calculate hashes, extract strings, detect suspicious patterns
 - **Boot Code Disassembly**: x86/x86-64 assembly analysis with pattern recognition
+- **Filesystem Support**: FAT12/16/32, NTFS, and exFAT VBR parsing
 - **Security Scanning**: Check against known malware signatures and bootkit patterns
 - **Threat Intelligence**: Query VirusTotal API for online threat information
 - **HTML Reports**: Professional, responsive reports with syntax highlighting
@@ -16,11 +32,11 @@ A comprehensive Python tool for analyzing boot sectors from disk drives or boot 
 - **Multi-Format Output**: Human-readable, JSON, and HTML report formats
 - **Command Line Interface**: Easy-to-use CLI with configuration file support
 
-## Installation
+## 🚀 Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/bootsectoranalyzer/boot-sector-analyzer.git
+git clone https://github.com/surreal70/boot-sector-analyzer.git
 cd boot-sector-analyzer
 
 # Create virtual environment
@@ -34,28 +50,31 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-## Usage
+## 📖 Usage
 
 ### Basic Usage
 
 ```bash
-# Analyze a boot sector image file
+# 🔍 Analyze a boot sector image file (RECOMMENDED - safer than direct device access)
 boot-sector-analyzer boot_sector.img
 
-# Analyze the first sector of a disk device
-boot-sector-analyzer /dev/sda
+# ⚠️ Analyze the first sector of a disk device (REQUIRES ROOT - BE CAREFUL!)
+sudo boot-sector-analyzer /dev/sda
 
-# Generate JSON output for automation
+# 📊 Generate JSON output for automation
 boot-sector-analyzer -f json boot_sector.img
 
-# Generate HTML report with disassembly and responsive design
+# 🌐 Generate HTML report with disassembly and responsive design
 boot-sector-analyzer -f html boot_sector.img > report.html
 
-# Verbose output with detailed logging
+# 📝 Verbose output with detailed logging
 boot-sector-analyzer -v boot_sector.img
+
+# 🚫 Analyze disk without VBR analysis (faster, MBR only)
+sudo boot-sector-analyzer --no-vbr /dev/sda
 ```
 
-### Configuration
+### ⚙️ Configuration
 
 Create a configuration file to set API keys and preferences:
 
@@ -72,13 +91,13 @@ Edit the configuration file to add your VirusTotal API key:
 virustotal_api_key = your_api_key_here
 ```
 
-## Requirements
+## 📋 Requirements
 
 - Python 3.8 or higher
 - Required packages listed in `requirements.txt`
 - Optional: VirusTotal API key for threat intelligence
 
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 boot_sector_analyzer/
@@ -92,13 +111,17 @@ boot_sector_analyzer/
 ├── internet_checker.py      # Online threat intelligence
 ├── report_generator.py      # Report generation (human, JSON)
 ├── html_generator.py        # HTML report generation with responsive design
+├── vbr_analyzer.py          # VBR analysis orchestration
+├── partition_scanner.py     # Partition detection and VBR extraction
+├── vbr_structure_parser.py  # Filesystem-specific VBR parsing
+├── vbr_content_analyzer.py  # VBR content analysis and threat detection
 ├── cli.py                   # Command line interface
 └── config.py                # Configuration management
 ```
 
-## Development
+## 🛠️ Development
 
-### Running Tests
+### 🧪 Running Tests
 
 ```bash
 # Run all tests
@@ -111,7 +134,7 @@ pytest --cov=boot_sector_analyzer
 pytest -v tests/test_properties.py
 ```
 
-### Code Quality
+### 📏 Code Quality
 
 ```bash
 # Check code style
@@ -121,11 +144,11 @@ flake8 boot_sector_analyzer/
 black boot_sector_analyzer/
 ```
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -134,11 +157,54 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 5. Ensure all tests pass
 6. Submit a pull request
 
-## Security
+## 🔒 Security
 
 This tool is designed for security analysis purposes. Always ensure you have proper authorization before analyzing boot sectors from systems you do not own.
 
-## Changelog
+### ⚠️ Root Access Warnings
+
+- **Direct Device Analysis**: Accessing raw disk devices (e.g., `/dev/sda`) requires root privileges
+- **Data Safety**: Always double-check device paths before analysis to prevent accidental data access
+- **Recommended Approach**: Use disk image files instead of direct device access when possible
+- **Backup First**: Consider creating disk images using `dd` before direct analysis
+
+### 🧪 Experimental Features
+
+- **VBR Analysis**: Volume Boot Record analysis is experimental and may produce false positives
+- **Threat Detection**: Advanced threat detection algorithms are still being refined
+- **Verification**: Always verify results through multiple analysis methods for critical assessments
+
+## 📝 Changelog
+
+### Version 0.3.0 (Volume Boot Record Analysis Release)
+
+**Major New Features:**
+- **Volume Boot Record (VBR) Analysis**: Complete VBR detection, extraction, and analysis
+- **Automatic Partition Detection**: Identifies valid partitions from MBR for VBR extraction
+- **Filesystem-Specific Parsing**: Supports FAT12/16/32, NTFS, and exFAT VBR structures
+- **VBR Boot Code Disassembly**: x86/x86-64 disassembly with filesystem-specific context
+- **VBR Security Scanning**: Threat detection and malware signature checking for VBRs
+- **Direct Disk Access**: VBR extraction from disk devices (not performed on image files)
+- **Enhanced Reporting**: VBR analysis integrated into all output formats
+
+**New Components:**
+- VBRAnalyzer: Orchestrates complete VBR analysis workflow
+- PartitionScanner: Identifies partitions and extracts VBR data
+- VBRStructureParser: Filesystem-specific VBR structure parsing
+- VBRContentAnalyzer: VBR content analysis and threat detection
+
+**Testing & Validation:**
+- 217 total tests passing with comprehensive coverage
+- 59 correctness properties validated (13 new VBR-specific properties)
+- Property-based testing for VBR functionality
+- Integration testing for end-to-end VBR workflows
+- Cross-format compatibility testing for VBR reports
+
+**Technical Improvements:**
+- Error-resilient VBR extraction (continues if individual partitions fail)
+- Intelligent VBR analysis (only for direct disk access, not image files)
+- Comprehensive VBR data models and filesystem metadata extraction
+- Enhanced security analysis with VBR-specific threat detection
 
 ### Version 0.2.2 (Enhanced HTML Styling Release)
 

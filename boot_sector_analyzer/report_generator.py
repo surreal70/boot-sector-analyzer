@@ -344,8 +344,64 @@ class ReportGenerator:
             lines.append("Boot sector appears to be clean.")
         lines.append("")
 
+        # VBR Analysis Section (if available)
+        if result.vbr_analysis:
+            lines.append("VOLUME BOOT RECORD (VBR) ANALYSIS")
+            lines.append("-" * 40)
+            lines.append(f"Analyzed {len(result.vbr_analysis)} partition(s) for VBR data:")
+            lines.append("")
+            
+            for vbr_result in result.vbr_analysis:
+                lines.append(f"Partition {vbr_result.partition_number}:")
+                lines.append("-" * 15)
+                
+                # Partition information
+                partition = vbr_result.partition_info
+                lines.append(f"  System ID: 0x{partition.partition_type:02X}")
+                lines.append(f"  Start LBA: {partition.start_lba}")
+                lines.append(f"  Size: {partition.size_sectors} sectors")
+                lines.append(f"  Bootable: {'Yes' if partition.status & 0x80 else 'No'}")
+                
+                if vbr_result.extraction_error:
+                    lines.append(f"  VBR Extraction: Failed - {vbr_result.extraction_error}")
+                    lines.append("")
+                    continue
+                
+                if vbr_result.vbr_structure:
+                    vbr = vbr_result.vbr_structure
+                    lines.append(f"  Filesystem: {vbr.filesystem_type.value}")
+                    lines.append(f"  Boot Signature: 0x{vbr.boot_signature:04X}")
+                    
+                    # Filesystem metadata
+                    if vbr.filesystem_metadata.volume_label:
+                        lines.append(f"  Volume Label: {vbr.filesystem_metadata.volume_label}")
+                    if vbr.filesystem_metadata.cluster_size:
+                        lines.append(f"  Cluster Size: {vbr.filesystem_metadata.cluster_size} bytes")
+                    if vbr.filesystem_metadata.total_sectors:
+                        lines.append(f"  Total Sectors: {vbr.filesystem_metadata.total_sectors}")
+                
+                if vbr_result.content_analysis:
+                    content = vbr_result.content_analysis
+                    lines.append("  VBR Hashes:")
+                    for hash_type, hash_value in content.hashes.items():
+                        lines.append(f"    {hash_type.upper()}: {hash_value}")
+                    
+                    lines.append(f"  Threat Level: {content.threat_level.value.upper()}")
+                    
+                    if content.detected_patterns:
+                        lines.append("  Boot Patterns:")
+                        for pattern in content.detected_patterns:
+                            lines.append(f"    - {pattern.pattern_type}: {pattern.description}")
+                    
+                    if content.anomalies:
+                        lines.append("  Anomalies:")
+                        for anomaly in content.anomalies:
+                            lines.append(f"    - {anomaly.anomaly_type}: {anomaly.description} (Severity: {anomaly.severity})")
+                
+                lines.append("")
+
         # Disassembly Section (if available)
-        if result.disassembly and result.disassembly.instructions:
+        if result.disassembly is not None and result.disassembly.instructions:
             lines.append("BOOT CODE DISASSEMBLY")
             lines.append("-" * 25)
             lines.append("x86 assembly instructions from the boot code region:")
@@ -385,6 +441,12 @@ class ReportGenerator:
                     lines.append(f"  - {pattern.pattern_type}: {pattern.description}")
                     lines.append(f"    Significance: {pattern.significance}")
             
+            lines.append("")
+        elif result.disassembly is None:
+            # Handle empty boot code case
+            lines.append("BOOT CODE DISASSEMBLY")
+            lines.append("-" * 25)
+            lines.append("No boot code present (all zeros)")
             lines.append("")
 
         # Hexdump Section - Use enhanced version if MBR parsing succeeded, otherwise use original
@@ -483,15 +545,29 @@ class ReportGenerator:
                 "query_timestamp": result.threat_intelligence.query_timestamp.isoformat(),
             }
 
-        # Add hexdump data
+        # Add hexdump data with partition color metadata
+        partition_colors = {}
+        try:
+            mbr_structure = self.mbr_decoder.parse_mbr(result.hexdump.raw_data)
+            for i, partition in enumerate(mbr_structure.partition_entries, 1):
+                partition_colors[f"partition_{i}"] = {
+                    "html_color": self.mbr_decoder.get_partition_color_info(446 + (i-1)*16, mbr_structure)[0],
+                    "ansi_color": self.mbr_decoder.get_partition_color_info(446 + (i-1)*16, mbr_structure)[1],
+                    "is_empty": partition.is_empty,
+                    "system_id": partition.system_id if not partition.is_empty else None
+                }
+        except Exception as e:
+            logger.debug(f"Could not parse MBR for partition color metadata: {e}")
+        
         report_data["hexdump"] = {
             "total_bytes": result.hexdump.total_bytes,
             "ascii_representation": result.hexdump.ascii_representation,
             "formatted_lines": result.hexdump.formatted_lines,
+            "partition_colors": partition_colors,
         }
 
         # Add disassembly data if available
-        if result.disassembly:
+        if result.disassembly is not None:
             report_data["disassembly"] = {
                 "total_bytes_disassembled": result.disassembly.total_bytes_disassembled,
                 "instructions": [
@@ -521,7 +597,117 @@ class ReportGenerator:
                     }
                     for pattern in result.disassembly.boot_patterns
                 ],
+                "empty_boot_code": False,
             }
+        else:
+            # Handle empty boot code case
+            report_data["disassembly"] = {
+                "empty_boot_code": True,
+                "message": "No boot code present (all zeros)",
+                "total_bytes_disassembled": 0,
+                "instructions": [],
+                "invalid_instructions": [],
+                "boot_patterns": [],
+            }
+
+        # Add VBR analysis data if available
+        if result.vbr_analysis:
+            report_data["vbr_analysis"] = []
+            for vbr_result in result.vbr_analysis:
+                vbr_data = {
+                    "partition_number": vbr_result.partition_number,
+                    "partition_info": {
+                        "system_id": f"0x{vbr_result.partition_info.partition_type:02X}",
+                        "start_lba": vbr_result.partition_info.start_lba,
+                        "size_sectors": vbr_result.partition_info.size_sectors,
+                        "bootable": bool(vbr_result.partition_info.status & 0x80),
+                    },
+                    "extraction_error": vbr_result.extraction_error,
+                }
+                
+                if vbr_result.vbr_structure:
+                    vbr_structure = vbr_result.vbr_structure
+                    vbr_data["vbr_structure"] = {
+                        "filesystem_type": vbr_structure.filesystem_type.value,
+                        "boot_signature": f"0x{vbr_structure.boot_signature:04X}",
+                        "filesystem_metadata": {
+                            "volume_label": vbr_structure.filesystem_metadata.volume_label,
+                            "cluster_size": vbr_structure.filesystem_metadata.cluster_size,
+                            "total_sectors": vbr_structure.filesystem_metadata.total_sectors,
+                            "filesystem_version": vbr_structure.filesystem_metadata.filesystem_version,
+                            "creation_timestamp": (
+                                vbr_structure.filesystem_metadata.creation_timestamp.isoformat()
+                                if vbr_structure.filesystem_metadata.creation_timestamp else None
+                            ),
+                        },
+                    }
+                
+                if vbr_result.content_analysis:
+                    content = vbr_result.content_analysis
+                    vbr_data["content_analysis"] = {
+                        "hashes": content.hashes,
+                        "boot_code_hashes": content.boot_code_hashes,
+                        "threat_level": content.threat_level.value,
+                        "detected_patterns": [
+                            {
+                                "pattern_type": pattern.pattern_type,
+                                "description": pattern.description,
+                                "significance": pattern.significance,
+                                "filesystem_specific": pattern.filesystem_specific,
+                                "instruction_count": len(pattern.instructions),
+                            }
+                            for pattern in content.detected_patterns
+                        ],
+                        "anomalies": [
+                            {
+                                "anomaly_type": anomaly.anomaly_type,
+                                "description": anomaly.description,
+                                "severity": anomaly.severity,
+                                "evidence": anomaly.evidence,
+                            }
+                            for anomaly in content.anomalies
+                        ],
+                    }
+                    
+                    # Add VBR disassembly data if available
+                    if content.disassembly_result:
+                        vbr_data["content_analysis"]["disassembly"] = {
+                            "total_bytes_disassembled": content.disassembly_result.total_bytes_disassembled,
+                            "instructions": [
+                                {
+                                    "address": f"0x{instruction.address:04X}",
+                                    "bytes": [f"0x{b:02X}" for b in instruction.bytes],
+                                    "mnemonic": instruction.mnemonic,
+                                    "operands": instruction.operands,
+                                    "comment": instruction.comment,
+                                }
+                                for instruction in content.disassembly_result.instructions
+                            ],
+                            "invalid_instructions": [
+                                {
+                                    "address": f"0x{invalid.address:04X}",
+                                    "bytes": [f"0x{b:02X}" for b in invalid.bytes],
+                                    "reason": invalid.reason,
+                                }
+                                for invalid in content.disassembly_result.invalid_instructions
+                            ],
+                            "boot_patterns": [
+                                {
+                                    "pattern_type": pattern.pattern_type,
+                                    "description": pattern.description,
+                                    "significance": pattern.significance,
+                                    "instruction_count": len(pattern.instructions),
+                                }
+                                for pattern in content.disassembly_result.boot_patterns
+                            ],
+                        }
+                
+                # Add VBR hexdump data
+                if vbr_result.vbr_structure and vbr_result.vbr_structure.raw_data:
+                    vbr_hexdump = self._generate_vbr_hexdump_data(vbr_result.vbr_structure.raw_data)
+                    vbr_data["hexdump"] = vbr_hexdump
+                
+                report_data["vbr_analysis"].append(vbr_data)
 
         return json.dumps(report_data, indent=2)
 
@@ -552,3 +738,51 @@ class ReportGenerator:
             ThreatLevel.CRITICAL: "🔴",
         }
         return indicators.get(threat_level, "❓")
+
+    def _generate_vbr_hexdump_data(self, vbr_data: bytes) -> dict:
+        """
+        Generate hexdump data for VBR.
+        
+        Args:
+            vbr_data: 512-byte VBR data
+            
+        Returns:
+            Dictionary with hexdump information
+        """
+        if len(vbr_data) != 512:
+            return {
+                "total_bytes": len(vbr_data),
+                "formatted_lines": [f"Invalid VBR size: {len(vbr_data)} bytes (expected 512)"],
+                "ascii_representation": "",
+            }
+        
+        # Generate formatted hexdump lines
+        formatted_lines = []
+        ascii_repr = ""
+        
+        for offset in range(0, len(vbr_data), 16):
+            row_data = vbr_data[offset:offset + 16]
+            
+            # Format offset
+            offset_str = f"0x{offset:04X}"
+            
+            # Format hex bytes
+            hex_bytes = " ".join(f"{byte:02X}" for byte in row_data)
+            
+            # Pad hex bytes if row is incomplete
+            if len(row_data) < 16:
+                hex_bytes += "   " * (16 - len(row_data))
+            
+            # Format ASCII representation
+            ascii_part = self.format_ascii_column(row_data)
+            ascii_repr += ascii_part
+            
+            # Combine into line
+            line = f"{offset_str}  {hex_bytes}  {ascii_part}"
+            formatted_lines.append(line)
+        
+        return {
+            "total_bytes": len(vbr_data),
+            "formatted_lines": formatted_lines,
+            "ascii_representation": ascii_repr,
+        }

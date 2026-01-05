@@ -16,7 +16,7 @@ if requirements_path.exists():
 
 setup(
     name="boot-sector-analyzer",
-    version="0.2.2",
+    version="0.3.0",
     author="Boot Sector Analyzer Team",
     author_email="team@bootsectoranalyzer.com",
     description="A comprehensive boot sector analysis tool",

@@ -70,11 +70,13 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s /dev/sda                    # Analyze first sector of /dev/sda
-  %(prog)s boot_sector.img             # Analyze boot sector image file
+  %(prog)s /dev/sda                    # Analyze first sector of /dev/sda (includes VBR analysis)
+  %(prog)s boot_sector.img             # Analyze boot sector image file (VBR analysis skipped)
   %(prog)s -v -f json boot.img         # Verbose output in JSON format
   %(prog)s -f html -o report.html boot.img # Generate HTML report
   %(prog)s --config config.ini boot.img # Use configuration file
+  %(prog)s --no-vbr /dev/sda           # Analyze disk without VBR analysis
+  %(prog)s --force-vbr boot.img        # Force VBR analysis on image file (may fail)
         """,
     )
 
@@ -137,6 +139,19 @@ Examples:
         "--cache-dir",
         type=Path,
         help="Directory for caching threat intelligence results",
+    )
+
+    # VBR analysis options
+    parser.add_argument(
+        "--no-vbr",
+        action="store_true",
+        help="Disable Volume Boot Record (VBR) analysis for disk devices",
+    )
+
+    parser.add_argument(
+        "--force-vbr",
+        action="store_true",
+        help="Force VBR analysis even for image files (may fail without direct disk access)",
     )
 
     return parser
@@ -333,6 +348,15 @@ def main() -> int:
             api_key=api_key,
             cache_dir=str(cache_dir) if cache_dir else None
         )
+        
+        # Configure VBR analysis options
+        if hasattr(args, 'no_vbr') and args.no_vbr:
+            logger.info("VBR analysis disabled by user request")
+            analyzer.vbr_analyzer.disable_vbr_analysis = True
+        
+        if hasattr(args, 'force_vbr') and args.force_vbr:
+            logger.info("VBR analysis forced for image files by user request")
+            analyzer.vbr_analyzer.force_vbr_analysis = True
         
         logger.info(f"Starting analysis of {args.source}")
         

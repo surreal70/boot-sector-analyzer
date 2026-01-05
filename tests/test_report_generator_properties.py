@@ -20,10 +20,67 @@ from boot_sector_analyzer.models import (
     BootkitIndicator,
     VirusTotalResult,
     ThreatLevel,
+    VBRAnalysisResult,
+    VBRStructure,
+    VBRContentAnalysis,
+    FilesystemType,
+    FilesystemMetadata,
+    Instruction,
+    InvalidInstruction,
+    BootPattern,
+    DisassemblyResult,
 )
 
 
 # Generators for test data
+@st.composite
+def instruction_strategy(draw):
+    """Generate a valid Instruction."""
+    from boot_sector_analyzer.models import Instruction
+    return Instruction(
+        address=draw(st.integers(min_value=0x7C00, max_value=0x7DFF)),
+        bytes=draw(st.binary(min_size=1, max_size=8)),
+        mnemonic=draw(st.sampled_from(["mov", "jmp", "int", "push", "pop", "call", "ret"])),
+        operands=draw(st.text(max_size=50)),
+        comment=draw(st.one_of(st.none(), st.text(max_size=100)))
+    )
+
+
+@st.composite
+def invalid_instruction_strategy(draw):
+    """Generate a valid InvalidInstruction."""
+    from boot_sector_analyzer.models import InvalidInstruction
+    return InvalidInstruction(
+        address=draw(st.integers(min_value=0x7C00, max_value=0x7DFF)),
+        bytes=draw(st.binary(min_size=1, max_size=8)),
+        reason=draw(st.text(min_size=1, max_size=100))
+    )
+
+
+@st.composite
+def boot_pattern_strategy(draw):
+    """Generate a valid BootPattern."""
+    from boot_sector_analyzer.models import BootPattern
+    return BootPattern(
+        pattern_type=draw(st.sampled_from(["disk_read", "interrupt_call", "jump"])),
+        description=draw(st.text(min_size=1, max_size=200)),
+        instructions=draw(st.lists(instruction_strategy(), min_size=1, max_size=5)),
+        significance=draw(st.text(min_size=1, max_size=200))
+    )
+
+
+@st.composite
+def disassembly_result_strategy(draw):
+    """Generate a valid DisassemblyResult."""
+    from boot_sector_analyzer.models import DisassemblyResult
+    return DisassemblyResult(
+        instructions=draw(st.lists(instruction_strategy(), max_size=20)),
+        total_bytes_disassembled=draw(st.integers(min_value=0, max_value=446)),
+        invalid_instructions=draw(st.lists(invalid_instruction_strategy(), max_size=5)),
+        boot_patterns=draw(st.lists(boot_pattern_strategy(), max_size=5))
+    )
+
+
 @st.composite
 def partition_entry_strategy(draw):
     """Generate a valid PartitionEntry."""
@@ -183,6 +240,88 @@ def hexdump_data_strategy(draw):
 
 
 @st.composite
+def filesystem_metadata_strategy(draw):
+    """Generate a valid FilesystemMetadata."""
+    return FilesystemMetadata(
+        volume_label=draw(st.one_of(st.none(), st.text(min_size=1, max_size=11))),
+        cluster_size=draw(st.one_of(st.none(), st.integers(min_value=512, max_value=65536))),
+        total_sectors=draw(st.one_of(st.none(), st.integers(min_value=1, max_value=2**32-1))),
+        filesystem_version=draw(st.one_of(st.none(), st.text(min_size=1, max_size=10))),
+        creation_timestamp=draw(st.one_of(st.none(), st.datetimes()))
+    )
+
+
+@st.composite
+def vbr_structure_strategy(draw):
+    """Generate a valid VBRStructure."""
+    return VBRStructure(
+        filesystem_type=draw(st.sampled_from(FilesystemType)),
+        boot_code=draw(st.binary(min_size=400, max_size=450)),
+        boot_signature=draw(st.integers(min_value=0, max_value=0xFFFF)),
+        filesystem_metadata=draw(filesystem_metadata_strategy()),
+        raw_data=draw(st.binary(min_size=512, max_size=512))
+    )
+
+
+@st.composite
+def vbr_content_analysis_strategy(draw):
+    """Generate a valid VBRContentAnalysis."""
+    return VBRContentAnalysis(
+        hashes=draw(st.dictionaries(
+            st.sampled_from(["md5", "sha256"]),
+            st.text(min_size=32, max_size=64, alphabet="0123456789abcdef"),
+            min_size=1, max_size=2
+        )),
+        boot_code_hashes=draw(st.dictionaries(
+            st.sampled_from(["md5", "sha256"]),
+            st.text(min_size=32, max_size=64, alphabet="0123456789abcdef"),
+            min_size=1, max_size=2
+        )),
+        disassembly_result=draw(st.one_of(st.none(), disassembly_result_strategy())),
+        detected_patterns=draw(st.lists(vbr_pattern_strategy(), min_size=0, max_size=3)),
+        anomalies=draw(st.lists(vbr_anomaly_strategy(), min_size=0, max_size=3)),
+        threat_level=draw(st.sampled_from(ThreatLevel))
+    )
+
+
+@st.composite
+def vbr_pattern_strategy(draw):
+    """Generate a valid VBRPattern."""
+    from boot_sector_analyzer.models import VBRPattern, Instruction
+    return VBRPattern(
+        pattern_type=draw(st.sampled_from(["fat_boot_code", "ntfs_boot_code", "filesystem_check"])),
+        description=draw(st.text(min_size=10, max_size=100)),
+        instructions=draw(st.lists(instruction_strategy(), min_size=1, max_size=5)),
+        significance=draw(st.text(min_size=10, max_size=50)),
+        filesystem_specific=draw(st.booleans())
+    )
+
+
+@st.composite
+def vbr_anomaly_strategy(draw):
+    """Generate a valid VBRAnomalyy."""
+    from boot_sector_analyzer.models import VBRAnomalyy
+    return VBRAnomalyy(
+        anomaly_type=draw(st.sampled_from(["modified_boot_code", "suspicious_metadata", "invalid_signature"])),
+        description=draw(st.text(min_size=10, max_size=100)),
+        severity=draw(st.sampled_from(["low", "medium", "high", "critical"])),
+        evidence=draw(st.lists(st.text(min_size=5, max_size=50), min_size=0, max_size=3))
+    )
+
+
+@st.composite
+def vbr_analysis_result_strategy(draw):
+    """Generate a valid VBRAnalysisResult."""
+    return VBRAnalysisResult(
+        partition_number=draw(st.integers(min_value=1, max_value=4)),
+        partition_info=draw(partition_entry_strategy()),
+        vbr_structure=draw(st.one_of(st.none(), vbr_structure_strategy())),
+        content_analysis=draw(st.one_of(st.none(), vbr_content_analysis_strategy())),
+        extraction_error=draw(st.one_of(st.none(), st.text(min_size=10, max_size=100)))
+    )
+
+
+@st.composite
 def analysis_result_strategy(draw):
     """Generate a valid AnalysisResult."""
     return AnalysisResult(
@@ -192,7 +331,8 @@ def analysis_result_strategy(draw):
         content_analysis=draw(content_analysis_strategy()),
         security_analysis=draw(security_analysis_strategy()),
         hexdump=draw(hexdump_data_strategy()),
-        threat_intelligence=draw(st.one_of(st.none(), threat_intelligence_strategy()))
+        threat_intelligence=draw(st.one_of(st.none(), threat_intelligence_strategy())),
+        vbr_analysis=draw(st.lists(vbr_analysis_result_strategy(), min_size=0, max_size=4))
     )
 
 
@@ -647,3 +787,169 @@ class TestReportGeneratorProperties:
         assert hexdump_data["total_bytes"] == analysis_result.hexdump.total_bytes
         assert hexdump_data["formatted_lines"] == analysis_result.hexdump.formatted_lines
         assert hexdump_data["ascii_representation"] == analysis_result.hexdump.ascii_representation
+
+    @given(analysis_result_strategy())
+    def test_vbr_report_inclusion(self, analysis_result):
+        """
+        Property 54: VBR report inclusion
+        For any analysis result with VBR analysis data, the Report_Generator should include 
+        VBR analysis results in the generated report.
+        
+        Feature: boot-sector-analyzer, Property 54: VBR report inclusion
+        Validates: Requirements 14.9
+        """
+        generator = ReportGenerator()
+        
+        # Test human-readable format
+        human_report = generator.generate_report(analysis_result, "human")
+        
+        if analysis_result.vbr_analysis:
+            # Report should include VBR analysis section
+            assert "VOLUME BOOT RECORD (VBR) ANALYSIS" in human_report
+            assert f"Analyzed {len(analysis_result.vbr_analysis)} partition(s) for VBR data:" in human_report
+            
+            # Should include partition-specific information
+            for vbr_result in analysis_result.vbr_analysis:
+                assert f"Partition {vbr_result.partition_number}:" in human_report
+                
+                # Should include partition info
+                assert f"System ID: 0x{vbr_result.partition_info.partition_type:02X}" in human_report
+                assert f"Start LBA: {vbr_result.partition_info.start_lba}" in human_report
+                
+                if vbr_result.extraction_error:
+                    assert vbr_result.extraction_error in human_report
+                elif vbr_result.vbr_structure:
+                    assert vbr_result.vbr_structure.filesystem_type.value in human_report
+                    assert f"0x{vbr_result.vbr_structure.boot_signature:04X}" in human_report
+        else:
+            # If no VBR analysis, should not have VBR section
+            assert "VOLUME BOOT RECORD (VBR) ANALYSIS" not in human_report
+        
+        # Test JSON format
+        json_report = generator.generate_report(analysis_result, "json")
+        import json
+        report_data = json.loads(json_report)
+        
+        if analysis_result.vbr_analysis:
+            # Should have vbr_analysis field in JSON
+            assert "vbr_analysis" in report_data
+            vbr_data = report_data["vbr_analysis"]
+            assert len(vbr_data) == len(analysis_result.vbr_analysis)
+            
+            # Check each VBR analysis result
+            for i, vbr_result in enumerate(analysis_result.vbr_analysis):
+                json_vbr = vbr_data[i]
+                assert json_vbr["partition_number"] == vbr_result.partition_number
+                assert "partition_info" in json_vbr
+                
+                # Check partition info
+                partition_info = json_vbr["partition_info"]
+                assert partition_info["system_id"] == f"0x{vbr_result.partition_info.partition_type:02X}"
+                assert partition_info["start_lba"] == vbr_result.partition_info.start_lba
+                assert partition_info["size_sectors"] == vbr_result.partition_info.size_sectors
+                assert partition_info["bootable"] == bool(vbr_result.partition_info.status & 0x80)
+                
+                if vbr_result.extraction_error:
+                    assert json_vbr["extraction_error"] == vbr_result.extraction_error
+                elif vbr_result.vbr_structure:
+                    assert "vbr_structure" in json_vbr
+                    vbr_struct = json_vbr["vbr_structure"]
+                    assert vbr_struct["filesystem_type"] == vbr_result.vbr_structure.filesystem_type.value
+                    assert vbr_struct["boot_signature"] == f"0x{vbr_result.vbr_structure.boot_signature:04X}"
+        else:
+            # If no VBR analysis, should have empty list or no field
+            if "vbr_analysis" in report_data:
+                assert report_data["vbr_analysis"] == []
+
+    @given(analysis_result_strategy())
+    def test_vbr_hexdump_representation(self, analysis_result):
+        """
+        Property 55: VBR hexdump representation
+        For any analysis result with VBR analysis data, the Report_Generator should include 
+        VBR hexdump representation in all report formats.
+        
+        Feature: boot-sector-analyzer, Property 55: VBR hexdump representation
+        Validates: Requirements 14.10
+        """
+        generator = ReportGenerator()
+        
+        # Only test if there are VBR analysis results with valid VBR structures AND no extraction errors
+        # When there are extraction errors, the hash values are not displayed in human format
+        vbr_results_with_data = [
+            vbr for vbr in analysis_result.vbr_analysis 
+            if (vbr.vbr_structure and vbr.vbr_structure.raw_data and 
+                not vbr.extraction_error)  # Only test VBRs without extraction errors
+        ]
+        
+        if not vbr_results_with_data:
+            # Skip test if no VBR data to display without extraction errors
+            return
+        
+        # Test human-readable format
+        human_report = generator.generate_report(analysis_result, "human")
+        
+        # Should include VBR analysis section
+        assert "VOLUME BOOT RECORD (VBR) ANALYSIS" in human_report
+        
+        # For each VBR with data and no extraction errors, should have hash representation
+        for vbr_result in vbr_results_with_data:
+            # Should have partition section
+            assert f"Partition {vbr_result.partition_number}:" in human_report
+            
+            # Should show VBR hashes which are derived from the raw data
+            # Only check for hashes when there's no extraction error
+            if vbr_result.content_analysis and vbr_result.content_analysis.hashes:
+                for hash_value in vbr_result.content_analysis.hashes.values():
+                    assert hash_value in human_report
+        
+        # Test JSON format
+        json_report = generator.generate_report(analysis_result, "json")
+        import json
+        report_data = json.loads(json_report)
+        
+        if "vbr_analysis" in report_data:
+            vbr_data = report_data["vbr_analysis"]
+            
+            # Check each VBR analysis result with data and no extraction errors
+            for i, vbr_result in enumerate(analysis_result.vbr_analysis):
+                if (vbr_result.vbr_structure and vbr_result.vbr_structure.raw_data and 
+                    not vbr_result.extraction_error):
+                    json_vbr = vbr_data[i]
+                    
+                    # Should have hexdump field in JSON
+                    assert "hexdump" in json_vbr
+                    hexdump_data = json_vbr["hexdump"]
+                    
+                    # Should contain hexdump fields
+                    assert "total_bytes" in hexdump_data
+                    assert "formatted_lines" in hexdump_data
+                    assert "ascii_representation" in hexdump_data
+                    
+                    # Should be 512 bytes for valid VBR
+                    assert hexdump_data["total_bytes"] == 512
+                    
+                    # Should have formatted lines (32 lines for 512 bytes at 16 bytes per line)
+                    assert len(hexdump_data["formatted_lines"]) == 32
+                    
+                    # Each line should contain hex offset
+                    for line in hexdump_data["formatted_lines"]:
+                        assert "0x" in line  # Should contain hex offset
+        
+        # Test HTML format
+        html_report = generator.generate_report(analysis_result, "html")
+        
+        if vbr_results_with_data:
+            # Should include VBR analysis section
+            assert 'id="vbr-analysis"' in html_report
+            
+            # For each VBR with data and no extraction errors, should have hexdump table
+            for vbr_result in vbr_results_with_data:
+                # Should have partition section
+                assert f"Partition {vbr_result.partition_number}" in html_report
+                
+                # Should have VBR hexdump table (look for hexdump-table class)
+                # The HTML should contain a table with hex data
+                assert "hexdump-table" in html_report
+                
+                # Should contain hex offsets in HTML
+                assert "0x0000" in html_report

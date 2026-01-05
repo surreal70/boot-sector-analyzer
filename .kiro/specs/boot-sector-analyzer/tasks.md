@@ -1,4 +1,4 @@
-# Implementation Plan: Boot Sector Analyzer v0.2.2
+# Implementation Plan: Boot Sector Analyzer v0.3.0
 
 ## Overview
 
@@ -16,8 +16,11 @@ HTML output format with embedded CSS styling and boot code disassembly with asse
 **Version 0.2.1 Status: COMPLETED** ✅
 Individual partition color coding enhancement to improve visual analysis of partition table entries has been successfully implemented and tested.
 
-**Version 0.2.2 Status: IN PROGRESS** 🔄
+**Version 0.2.2 Status: COMPLETED** ✅
 HTML styling improvements for better readability and professional presentation, including light background for assembly code, fixed-width hexdump columns, and empty boot code handling.
+
+**Version 0.3.0 Status: COMPLETED** ✅
+Volume Boot Record (VBR) detection and analysis for comprehensive partition-level security assessment, including automatic partition detection, VBR extraction from direct disk access, filesystem-specific VBR parsing, and integration into existing report formats.
 
 ## Tasks
 
@@ -443,77 +446,77 @@ HTML styling improvements for better readability and professional presentation, 
 
 ## Version 0.2.1 Tasks - Individual Partition Color Coding
 
-- [ ] 23. Implement individual partition color coding
-  - [ ] 23.1 Extend MBRDecoder with partition-specific color detection
+- [x] 23. Implement individual partition color coding
+  - [x] 23.1 Extend MBRDecoder with partition-specific color detection
     - Add get_partition_section_type() method to identify individual partition entries
     - Define PartitionColors class with color scheme for 4 partitions plus empty state
     - Update existing get_section_type() to work with new partition-specific logic
     - _Requirements: 12.1, 12.4_
 
-  - [ ]* 23.2 Write property test for individual partition color coding
+  - [x] 23.2 Write property test for individual partition color coding
     - **Property 39: Individual partition color coding**
     - **Validates: Requirements 12.1, 12.2, 12.3, 12.4**
 
-  - [ ]* 23.3 Write property test for empty partition color handling
+  - [x] 23.3 Write property test for empty partition color handling
     - **Property 40: Empty partition color handling**
     - **Validates: Requirements 12.5**
 
-  - [ ] 23.4 Update ReportGenerator for partition-specific colors
+  - [x] 23.4 Update ReportGenerator for partition-specific colors
     - Modify format_hexdump_table() to apply different colors to each partition entry
     - Update ANSI color scheme to support 4 distinct partition colors
     - Add partition color legend generation for human-readable output
     - _Requirements: 12.1, 12.3, 12.6_
 
-  - [ ] 23.5 Update HTMLGenerator for partition-specific styling
+  - [x] 23.5 Update HTMLGenerator for partition-specific styling
     - Add CSS classes for mbr-partition-1 through mbr-partition-4
     - Update get_mbr_css_class() to return partition-specific classes
     - Implement generate_partition_legend() for HTML color legend
     - _Requirements: 12.2, 12.6_
 
-  - [ ]* 23.6 Write property test for partition color legend inclusion
+  - [x] 23.6 Write property test for partition color legend inclusion
     - **Property 41: Partition color legend inclusion**
     - **Validates: Requirements 12.6**
 
-  - [ ] 23.7 Ensure cross-format color consistency
+  - [x] 23.7 Ensure cross-format color consistency
     - Update JSON output to include partition color metadata
     - Ensure color assignments remain consistent across all output formats
     - Test color consistency between human-readable, HTML, and hexdump formats
     - _Requirements: 12.7_
 
-  - [ ]* 23.8 Write property test for cross-format partition color consistency
+  - [x] 23.8 Write property test for cross-format partition color consistency
     - **Property 42: Cross-format partition color consistency**
     - **Validates: Requirements 12.7**
 
-- [ ] 24. Integration testing for partition color coding
-  - [ ] 24.1 Write integration tests for complete partition color workflow
+- [x] 24. Integration testing for partition color coding
+  - [x] 24.1 Write integration tests for complete partition color workflow
     - Test end-to-end partition color coding with sample MBR data
     - Verify color assignments for all 4 partition entries
     - Test empty partition handling and color assignment
     - _Requirements: All partition color requirements_
 
-  - [ ] 24.2 Write cross-format partition color compatibility tests
+  - [x] 24.2 Write cross-format partition color compatibility tests
     - Ensure partition colors are consistent across human, JSON, and HTML formats
     - Test color legend generation in all supported output formats
     - Verify color assignments with various partition table configurations
     - _Requirements: 12.7_
 
-- [ ] 25. Final checkpoint - Complete v0.2.1 partition color coding validation
+- [x] 25. Final checkpoint - Complete v0.2.1 partition color coding validation
   - Ensure all partition color tests pass, ask the user if questions arise.
 
 ## Version 0.2.2 Tasks - HTML Styling Improvements
 
-- [ ] 26. Implement HTML styling enhancements
-  - [ ] 26.1 Update HTMLGenerator CSS for light background assembly code
+- [x] 26. Implement HTML styling enhancements
+  - [x] 26.1 Update HTMLGenerator CSS for light background assembly code
     - Replace dark theme (#1e1e1e) with light background (#f8f9fa) for assembly code
     - Update text color to dark (#212529) for better contrast
     - Add subtle border and improved padding for professional appearance
     - _Requirements: 13.1, 13.2_
 
-  - [ ] 26.2 Write property test for HTML light background styling
+  - [x] 26.2 Write property test for HTML light background styling
     - **Property 43: HTML light background styling**
     - **Validates: Requirements 13.1, 13.2**
 
-  - [ ] 26.3 Implement professional color scheme for syntax highlighting
+  - [x] 26.3 Implement professional color scheme for syntax highlighting
     - Update instruction color to professional blue (#0066cc) with medium font weight
     - Change register color to forest green (#228b22) for better readability
     - Update immediate values to chocolate orange (#d2691e)
@@ -521,68 +524,307 @@ HTML styling improvements for better readability and professional presentation, 
     - Update comments to muted gray (#6a737d) to reduce visual noise
     - _Requirements: 13.6, 13.7_
 
-  - [ ] 26.4 Write property test for HTML professional color scheme
+  - [x] 26.4 Write property test for HTML professional color scheme
     - **Property 45: HTML professional color scheme**
     - **Validates: Requirements 13.6, 13.7**
 
-- [ ] 27. Implement fixed-width hexdump table columns
-  - [ ] 27.1 Update hexdump table CSS for fixed column widths
+- [x] 27. Implement fixed-width hexdump table columns
+  - [x] 27.1 Update hexdump table CSS for fixed column widths
     - Set offset column to fixed 80px width for consistency
     - Set hex byte columns to fixed 30px width each for uniform spacing
     - Set ASCII column to fixed 120px width for proper alignment
     - Use table-layout: fixed to prevent column width variations
     - _Requirements: 13.3, 13.4, 13.5_
 
-  - [ ] 27.2 Write property test for HTML fixed-width columns
+  - [x] 27.2 Write property test for HTML fixed-width columns
     - **Property 44: HTML fixed-width columns**
     - **Validates: Requirements 13.3, 13.4, 13.5**
 
-  - [ ] 27.3 Update format_hexdump_with_colors method for fixed widths
+  - [x] 27.3 Update format_hexdump_with_colors method for fixed widths
     - Modify HTML table generation to use fixed-width column specifications
     - Ensure consistent alignment across all hexdump rows
     - Test with various boot sector data to verify column consistency
     - _Requirements: 13.3, 13.4, 13.5_
 
-- [ ] 28. Implement empty boot code detection and handling
-  - [ ] 28.1 Add empty boot code detection to ContentAnalyzer
+- [x] 28. Implement empty boot code detection and handling
+  - [x] 28.1 Add empty boot code detection to ContentAnalyzer
     - Implement check_empty_boot_code() method to detect all-zero boot code
     - Update disassemble_boot_code() to return None for empty boot code
     - Add logic to skip disassembly processing when boot code is empty
     - _Requirements: 13.8, 11.10_
 
-  - [ ] 28.2 Write property test for empty boot code handling
+  - [x] 28.2 Write property test for empty boot code handling
     - **Property 46: Empty boot code handling**
     - **Validates: Requirements 13.8, 11.10**
 
-  - [ ] 28.3 Update HTMLGenerator for empty boot code display
+  - [x] 28.3 Update HTMLGenerator for empty boot code display
     - Modify format_assembly_syntax_highlighting() to handle None disassembly
     - Display "No boot code present (all zeros)" message for empty boot code
     - Ensure consistent styling with light background theme
     - _Requirements: 13.8_
 
-  - [ ] 28.4 Update ReportGenerator for all output formats
+  - [x] 28.4 Update ReportGenerator for all output formats
     - Ensure empty boot code handling works in human-readable format
     - Update JSON output to include empty boot code status
     - Test empty boot code handling across all output formats
     - _Requirements: 13.8, 11.10_
 
-- [ ] 29. Integration testing for HTML styling improvements
-  - [ ] 29.1 Write integration tests for complete HTML styling workflow
+- [x] 29. Integration testing for HTML styling improvements
+  - [x] 29.1 Write integration tests for complete HTML styling workflow
     - Test end-to-end HTML report generation with enhanced styling
     - Verify light background assembly code display
     - Test fixed-width hexdump table formatting
     - Verify empty boot code handling in HTML output
     - _Requirements: All HTML styling requirements_
 
-  - [ ] 29.2 Write cross-format styling compatibility tests
+  - [x] 29.2 Write cross-format styling compatibility tests
     - Ensure styling improvements don't break existing functionality
     - Test backward compatibility with existing HTML reports
     - Verify consistency between different output formats
     - Test with various boot sector samples including empty boot code
     - _Requirements: 13.1-13.8_
 
-- [ ] 30. Final checkpoint - Complete v0.2.2 HTML styling improvements validation
+- [x] 30. Final checkpoint - Complete v0.2.2 HTML styling improvements validation
   - Ensure all HTML styling tests pass, ask the user if questions arise.
+
+## Version 0.3.0 Tasks - Volume Boot Record (VBR) Detection and Analysis
+
+- [x] 31. Implement VBR analysis foundation
+  - [x] 31.1 Create VBR-related data models and enums
+    - Add VBRAnalysisResult, VBRStructure, and filesystem-specific VBR structures
+    - Create FilesystemType enum and VBRPattern, VBRAnomalyy dataclasses
+    - Update AnalysisResult to include vbr_analysis field
+    - Add ValidPartition and VBRData dataclasses for extraction workflow
+    - _Requirements: 14.1, 14.5_
+
+  - [x] 31.2 Create PartitionScanner class for partition detection
+    - Implement identify_valid_partitions() method to find non-empty partitions from MBR
+    - Add calculate_partition_offset() method for LBA-to-byte offset conversion
+    - Implement validate_partition_access() method for partition accessibility checks
+    - Add extract_vbr_data() method for direct disk I/O to extract VBR data
+    - _Requirements: 14.1, 14.2, 14.3_
+
+  - [x] 31.3 Write property test for valid partition identification
+    - **Property 47: Valid partition identification**
+    - **Validates: Requirements 14.1**
+
+  - [x] 31.4 Write property test for VBR extraction completeness
+    - **Property 48: VBR extraction completeness**
+    - **Validates: Requirements 14.2, 14.3**
+
+- [x] 32. Implement VBR structure parsing
+  - [x] 32.1 Create VBRStructureParser class with filesystem detection
+    - Implement detect_filesystem_type() method using VBR signatures and partition types
+    - Add parse_vbr_structure() method with filesystem-specific parsing dispatch
+    - Implement extract_vbr_boot_code() method for filesystem-specific boot code extraction
+    - _Requirements: 14.5_
+
+  - [x] 32.2 Implement filesystem-specific VBR parsers
+    - Add parse_fat_vbr() method for FAT12/16/32 VBR parsing with BPB
+    - Implement parse_ntfs_vbr() method for NTFS VBR parsing with NTFS metadata
+    - Add parse_exfat_vbr() method for exFAT VBR parsing
+    - Include generic VBR parsing for unknown filesystem types
+    - _Requirements: 14.5_
+
+  - [x] 32.3 Write property test for filesystem-specific VBR parsing
+    - **Property 50: Filesystem-specific VBR parsing**
+    - **Validates: Requirements 14.5**
+
+- [x] 33. Implement VBR content analysis
+  - [x] 33.1 Create VBRContentAnalyzer class
+    - Implement analyze_vbr_content() method for comprehensive VBR analysis
+    - Add calculate_vbr_hashes() method for MD5 and SHA-256 hash calculation
+    - Implement extract_filesystem_metadata() method for filesystem-specific metadata
+    - Add identify_vbr_anomalies() method for suspicious VBR modification detection
+    - _Requirements: 14.6, 14.8_
+
+  - [x] 33.2 Write property test for VBR hash calculation accuracy
+    - **Property 51: VBR hash calculation accuracy**
+    - **Validates: Requirements 14.6**
+
+  - [x] 33.3 Implement VBR boot code disassembly and pattern detection
+    - Add disassemble_vbr_boot_code() method with filesystem-specific context
+    - Implement detect_vbr_patterns() method for filesystem-specific boot patterns
+    - Add support for FAT boot code, NTFS boot code, and other filesystem patterns
+    - Integrate with existing DisassemblyEngine for VBR boot code analysis
+    - _Requirements: 14.7, 14.14_
+
+  - [x] 33.4 Write property test for VBR boot code disassembly
+    - **Property 52: VBR boot code disassembly**
+    - **Validates: Requirements 14.7**
+
+  - [x] 33.5 Write property test for filesystem-specific boot pattern recognition
+    - **Property 58: Filesystem-specific boot pattern recognition**
+    - **Validates: Requirements 14.14**
+
+- [x] 34. Implement VBR security analysis integration
+  - [x] 34.1 Extend SecurityScanner for VBR threat detection
+    - Update check_known_signatures() method to include VBR hash checking
+    - Add VBR-specific threat detection patterns and malware signatures
+    - Implement VBR anomaly classification and threat level assessment
+    - Integrate VBR security analysis with existing threat intelligence
+    - _Requirements: 14.8, 14.13_
+
+  - [x] 34.2 Write property test for VBR pattern and threat detection
+    - **Property 53: VBR pattern and threat detection**
+    - **Validates: Requirements 14.8, 14.13**
+
+- [x] 35. Create VBRAnalyzer orchestrator class
+  - [x] 35.1 Implement VBRAnalyzer main coordination class
+    - Create analyze_vbrs() method to orchestrate complete VBR analysis workflow
+    - Add should_extract_vbrs() method to determine when VBR extraction is appropriate
+    - Implement extract_partition_vbrs() method to coordinate VBR extraction from all partitions
+    - Add error handling for VBR extraction failures with continuation logic
+    - _Requirements: 14.2, 14.4, 14.11, 14.12_
+
+  - [x] 35.2 Write property test for VBR extraction error handling
+    - **Property 49: VBR extraction error handling**
+    - **Validates: Requirements 14.4**
+
+  - [x] 35.3 Write property test for image file VBR extraction handling
+    - **Property 56: Image file VBR extraction handling**
+    - **Validates: Requirements 14.11**
+
+  - [x] 35.4 Write property test for empty partition table handling
+    - **Property 57: Empty partition table handling**
+    - **Validates: Requirements 14.12**
+
+- [x] 36. Checkpoint - Ensure VBR analysis components work
+  - Ensure all VBR analysis tests pass, ask the user if questions arise.
+
+- [-] 37. Integrate VBR analysis into report generation
+  - [x] 37.1 Update ReportGenerator for VBR report inclusion
+    - Modify generate_report() method to include VBR analysis results
+    - Add VBR section formatting for human-readable output format
+    - Update JSON output format to include VBR analysis data
+    - Ensure VBR hexdump representation is included in all report formats
+    - _Requirements: 14.9, 14.10_
+
+  - [x] 37.2 Write property test for VBR report inclusion
+    - **Property 54: VBR report inclusion**
+    - **Validates: Requirements 14.9**
+
+  - [x] 37.3 Write property test for VBR hexdump representation
+    - **Property 55: VBR hexdump representation**
+    - **Validates: Requirements 14.10**
+
+  - [x] 37.4 Update HTMLGenerator for VBR HTML formatting
+    - Add VBR section generation for HTML reports
+    - Implement separate sections for each partition's VBR analysis
+    - Add VBR-specific syntax highlighting and formatting
+    - Include VBR hexdump tables with appropriate styling
+    - _Requirements: 14.15_
+
+  - [x] 37.5 Write property test for HTML VBR section formatting
+    - **Property 59: HTML VBR section formatting**
+    - **Validates: Requirements 14.15**
+
+- [x] 38. Update main analysis workflow for VBR integration
+  - [x] 38.1 Integrate VBRAnalyzer into main BootSectorAnalyzer workflow
+    - Update main analysis pipeline to include VBR analysis after MBR analysis
+    - Add VBR analysis coordination between MBR parsing and report generation
+    - Ensure VBR analysis results are properly integrated into final analysis results
+    - Add appropriate logging and progress indication for VBR analysis steps
+    - _Requirements: All VBR requirements integrated_
+
+  - [x] 38.2 Update CLI interface for VBR analysis options
+    - Add command line options for controlling VBR analysis behavior
+    - Include VBR analysis information in help text and usage examples
+    - Add verbose output options for VBR analysis progress
+    - Ensure backward compatibility with existing CLI interface
+    - _Requirements: 14.11_
+
+- [x] 39. Integration testing for complete VBR workflow
+  - [x] 39.1 Write integration tests for complete VBR analysis workflow
+    - Test end-to-end VBR analysis with sample disk structures
+    - Verify VBR extraction, parsing, and analysis for different filesystem types
+    - Test error handling with inaccessible partitions and I/O failures
+    - Validate VBR analysis integration into all report formats
+    - _Requirements: All VBR requirements_
+
+  - [x] 39.2 Write cross-format VBR compatibility tests
+    - Ensure VBR analysis results are consistent across human, JSON, and HTML formats
+    - Test VBR report formatting and section organization
+    - Verify VBR hexdump inclusion and formatting across all output formats
+    - Test VBR analysis with various partition table configurations
+    - _Requirements: 14.9, 14.10, 14.15_
+
+- [x] 40. Final checkpoint - Complete v0.3.0 VBR analysis validation
+  - Ensure all VBR analysis tests pass, ask the user if questions arise.
+
+## Version 0.3.1 Tasks - Enhanced VirusTotal Integration
+
+- [ ] 41. Implement enhanced VirusTotal boot code analysis
+  - [ ] 41.1 Update InternetChecker for boot code specific analysis
+    - Add query_virustotal_boot_code() method to submit only boot code region (446 bytes)
+    - Implement should_skip_virustotal() method to detect empty boot code (all zeros)
+    - Update existing query_virustotal() method to maintain backward compatibility
+    - Add boot code hash calculation and caching for targeted analysis
+    - _Requirements: 5.8, 5.9_
+
+  - [ ] 41.2 Write property test for boot code specific VirusTotal analysis
+    - **Property 61: Boot code specific VirusTotal analysis**
+    - **Validates: Requirements 5.8**
+
+  - [ ] 41.3 Write property test for empty boot code VirusTotal handling
+    - **Property 62: Empty boot code VirusTotal handling**
+    - **Validates: Requirements 5.9**
+
+- [ ] 42. Enhance VirusTotal response data models and integration
+  - [ ] 42.1 Update data models for enhanced VirusTotal responses
+    - Extend ThreatIntelligence dataclass to include analysis_type field
+    - Add VirusTotalResult, VirusTotalEngineResult, and VirusTotalStats dataclasses
+    - Update AnalysisResult to include boot_code_threat_intelligence field
+    - Ensure complete VirusTotal API response is captured in raw_response field
+    - _Requirements: 5.7, 5.10_
+
+  - [ ] 42.2 Update InternetChecker to capture complete VirusTotal responses
+    - Modify query_virustotal() and query_virustotal_boot_code() to store full API responses
+    - Add parsing for detection ratios, engine results, and scan statistics
+    - Implement proper error handling for API response parsing
+    - Ensure backward compatibility with existing threat intelligence caching
+    - _Requirements: 5.7, 5.10_
+
+- [ ] 43. Update report generation for enhanced VirusTotal data
+  - [ ] 43.1 Update ReportGenerator for complete VirusTotal response inclusion
+    - Modify generate_report() method to include full VirusTotal responses in all formats
+    - Add VirusTotal detection results display with scan statistics
+    - Include vendor-specific findings and detection ratios in reports
+    - Add separate sections for full boot sector vs boot code only analysis
+    - _Requirements: 5.7, 5.10_
+
+  - [ ] 43.2 Write property test for VirusTotal response inclusion
+    - **Property 60: VirusTotal response inclusion**
+    - **Validates: Requirements 5.7**
+
+  - [ ] 43.3 Write property test for VirusTotal detection results display
+    - **Property 63: VirusTotal detection results display**
+    - **Validates: Requirements 5.10**
+
+  - [ ] 43.4 Update HTMLGenerator for enhanced VirusTotal display
+    - Add HTML formatting for VirusTotal detection results and statistics
+    - Implement color-coded detection ratio display (green/yellow/red based on detection count)
+    - Add expandable sections for detailed engine results
+    - Include links to full VirusTotal reports when available
+    - _Requirements: 5.7, 5.10_
+
+- [ ] 44. Integration and testing for enhanced VirusTotal functionality
+  - [ ] 44.1 Write integration tests for enhanced VirusTotal workflow
+    - Test end-to-end VirusTotal analysis with both full boot sector and boot code only
+    - Verify empty boot code detection and VirusTotal skipping
+    - Test complete VirusTotal response capture and display
+    - Validate VirusTotal data integration across all report formats
+    - _Requirements: All enhanced VirusTotal requirements_
+
+  - [ ] 44.2 Update existing tests for VirusTotal enhancements
+    - Modify existing VirusTotal tests to work with enhanced functionality
+    - Add mock responses for boot code specific analysis
+    - Test backward compatibility with existing VirusTotal integration
+    - Ensure all enhanced VirusTotal properties pass validation
+    - _Requirements: 5.7, 5.8, 5.9, 5.10_
+
+- [ ] 45. Final checkpoint - Complete v0.3.1 enhanced VirusTotal validation
+  - Ensure all enhanced VirusTotal tests pass, ask the user if questions arise.
 
 ## Notes
 
@@ -590,7 +832,9 @@ HTML styling improvements for better readability and professional presentation, 
 - **Version 0.1.1 Complete**: Enhanced hexdump functionality successfully implemented and tested
 - **Version 0.2.0 Complete**: HTML output and boot code disassembly functionality successfully implemented and tested
 - **Version 0.2.1 Complete**: Individual partition color coding enhancement for improved visual analysis
-- **Version 0.2.2 In Progress**: HTML styling improvements for better readability and professional presentation
+- **Version 0.2.2 Complete**: HTML styling improvements for better readability and professional presentation
+- **Version 0.3.0 Complete**: Volume Boot Record (VBR) detection and analysis for comprehensive partition-level security assessment
+- **Version 0.3.1 In Progress**: Enhanced VirusTotal integration with boot code specific analysis and complete response inclusion
 - Each task references specific requirements for traceability
 - Checkpoints ensure incremental validation throughout development
 - Property tests validate universal correctness properties using hypothesis library
@@ -605,10 +849,18 @@ HTML styling improvements for better readability and professional presentation, 
 - **v0.2.0**: 38 total correctness properties (26 existing + 12 new for HTML/disassembly)
 - **v0.2.1**: 42 total correctness properties (38 existing + 4 new for partition color coding)
 - **v0.2.2**: 46 total correctness properties (42 existing + 4 new for HTML styling improvements)
+- **v0.3.0**: 59 total correctness properties (46 existing + 13 new for VBR analysis)
+- **v0.3.1**: 63 total correctness properties (59 existing + 4 new for enhanced VirusTotal integration)
 - Complete test coverage with both unit and integration tests
 - Hexdump feature provides 17-column table format with offset and ASCII representation
 - **New in v0.2.0**: HTML output with embedded CSS, responsive design, and syntax highlighting
 - **New in v0.2.0**: x86/x86-64 boot code disassembly with pattern recognition and commenting
 - **New in v0.2.1**: Individual partition color coding for enhanced visual analysis of partition tables
 - **New in v0.2.2**: HTML styling improvements with light background, fixed-width columns, and empty boot code handling
+- **New in v0.3.0**: Volume Boot Record (VBR) detection and analysis with filesystem-specific parsing, security scanning, and comprehensive reporting
+- **New in v0.3.1**: Enhanced VirusTotal integration with boot code specific analysis, empty boot code detection, and complete response inclusion in reports
 - **Dependencies**: capstone-engine for disassembly, beautifulsoup4 and html5lib for HTML validation
+- **VBR Analysis**: Supports FAT12/16/32, NTFS, and exFAT filesystem VBR parsing with boot code disassembly
+- **Direct Disk Access**: VBR extraction only performed when analyzing disk devices directly, not image files
+- **Error Resilience**: VBR extraction failures for individual partitions don't stop analysis of remaining partitions
+- **Enhanced VirusTotal**: Submits only boot code region (446 bytes) for targeted analysis, skips submission for empty boot code, includes complete API responses in reports

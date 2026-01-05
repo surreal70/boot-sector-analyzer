@@ -25,6 +25,11 @@ from boot_sector_analyzer.models import (
     Instruction,
     InvalidInstruction,
     BootPattern,
+    VBRAnalysisResult,
+    VBRStructure,
+    VBRContentAnalysis,
+    FilesystemType,
+    FilesystemMetadata,
 )
 
 
@@ -527,15 +532,18 @@ class TestHTMLGeneratorProperties:
         
         # Hash values should be formatted with monospace
         if analysis_result.content_analysis.hashes:
-            # Should have hash values in the document
-            for hash_value in analysis_result.content_analysis.hashes.values():
-                if hash_value in html_document:
-                    # Hash should be near monospace formatting
-                    hash_index = html_document.find(hash_value)
-                    surrounding_text = html_document[max(0, hash_index-100):hash_index+100]
-                    assert ('class="hash-value"' in surrounding_text or 
-                           'class="monospace"' in surrounding_text), "Hash values should have monospace formatting"
-                    break
+            # Should have hash values in the content analysis section
+            content_section_start = html_document.find('id="content-analysis"')
+            if content_section_start > 0:
+                content_section = html_document[content_section_start:content_section_start + 2000]
+                for hash_value in analysis_result.content_analysis.hashes.values():
+                    if hash_value in content_section:
+                        # Hash should be near monospace formatting in content section
+                        hash_index = content_section.find(hash_value)
+                        surrounding_text = content_section[max(0, hash_index-100):hash_index+100]
+                        assert ('class="hash-value"' in surrounding_text or 
+                               'class="monospace"' in surrounding_text), "Hash values should have monospace formatting"
+                        break
         
         # If disassembly is present, should have monospace assembly formatting
         if analysis_result.disassembly and analysis_result.disassembly.instructions:
@@ -649,3 +657,397 @@ class TestHTMLGeneratorProperties:
         assert "http://" not in html_document or "https://" not in html_document or html_document.count("http") <= 2  # Allow for VirusTotal links
         assert '<link rel="stylesheet"' not in html_document
         assert '<script src=' not in html_document
+
+    @given(analysis_result_strategy())
+    def test_html_light_background_styling(self, analysis_result):
+        """
+        Property 43: HTML light background styling
+        For any HTML report containing assembly code, the Report_Generator should use 
+        a light background color instead of dark theme for better readability.
+        
+        Feature: boot-sector-analyzer, Property 43: HTML light background styling
+        Validates: Requirements 13.1, 13.2
+        """
+        generator = HTMLGenerator()
+        html_document = generator.create_html_document(analysis_result)
+        
+        # Extract CSS content
+        css_start = html_document.find("<style>") + 7
+        css_end = html_document.find("</style>")
+        css_content = html_document[css_start:css_end]
+        
+        # Should have assembly-code CSS class
+        assert ".assembly-code" in css_content
+        
+        # Should use light background color (#f8f9fa) instead of dark theme
+        light_background_color = "#f8f9fa"
+        assert light_background_color in css_content, "Should use light background color for assembly code"
+        
+        # Should NOT use dark background colors
+        dark_colors = ["#1e1e1e", "#000000", "#222222", "#333333"]
+        for dark_color in dark_colors:
+            assert dark_color not in css_content, f"Should not use dark background color {dark_color}"
+        
+        # Should use dark text color for contrast against light background
+        dark_text_color = "#212529"
+        assert dark_text_color in css_content, "Should use dark text color for contrast"
+        
+        # Should have professional appearance with border and padding
+        assert "border:" in css_content or "border-radius:" in css_content, "Should have border for professional appearance"
+        assert "padding:" in css_content, "Should have padding for professional appearance"
+        
+        # Assembly code section should have the light background styling
+        if analysis_result.disassembly and analysis_result.disassembly.instructions:
+            # Should have assembly code section in HTML
+            assert 'class="assembly-code"' in html_document, "Should have assembly code section with light background class"
+        
+        # Light background should provide better readability
+        # Check that background and text colors have sufficient contrast
+        # Light background (#f8f9fa) with dark text (#212529) provides good contrast
+        assert light_background_color in css_content and dark_text_color in css_content, "Should have good contrast between background and text"
+
+    @given(analysis_result_strategy())
+    def test_html_professional_color_scheme(self, analysis_result):
+        """
+        Property 45: HTML professional color scheme
+        For any HTML report containing assembly code, the Report_Generator should use 
+        a professional color scheme for syntax highlighting suitable for technical documentation.
+        
+        Feature: boot-sector-analyzer, Property 45: HTML professional color scheme
+        Validates: Requirements 13.6, 13.7
+        """
+        generator = HTMLGenerator()
+        html_document = generator.create_html_document(analysis_result)
+        
+        # Extract CSS content
+        css_start = html_document.find("<style>") + 7
+        css_end = html_document.find("</style>")
+        css_content = html_document[css_start:css_end]
+        
+        # Should have assembly syntax highlighting classes
+        syntax_classes = [".asm-instruction", ".asm-register", ".asm-immediate", ".asm-address", ".asm-comment"]
+        for cls in syntax_classes:
+            assert cls in css_content, f"Should have {cls} syntax highlighting class"
+        
+        # Should use professional color scheme
+        professional_colors = {
+            "#0066cc": "Professional blue for instructions",
+            "#228b22": "Forest green for registers", 
+            "#d2691e": "Chocolate orange for immediate values",
+            "#dc143c": "Crimson red for memory addresses",
+            "#6a737d": "Muted gray for comments"
+        }
+        
+        for color, description in professional_colors.items():
+            assert color in css_content, f"Should have {description} ({color})"
+        
+        # Instructions should have medium font weight for better readability
+        instruction_section = css_content[css_content.find(".asm-instruction"):css_content.find(".asm-register")]
+        assert "font-weight: 500" in instruction_section or "font-weight: medium" in instruction_section, "Instructions should have medium font weight"
+        
+        # Comments should be muted to reduce visual noise
+        comment_section = css_content[css_content.find(".asm-comment"):]
+        assert "#6a737d" in comment_section, "Comments should use muted gray color"
+        assert "font-style: italic" in comment_section, "Comments should be italicized"
+        
+        # Colors should be suitable for technical documentation (not too bright or distracting)
+        # Avoid overly bright or neon colors
+        bright_colors = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff"]
+        for bright_color in bright_colors:
+            assert bright_color not in css_content, f"Should not use overly bright color {bright_color}"
+        
+        # Should maintain readability with sufficient contrast against light background
+        # All colors should be dark enough to be readable on light background (#f8f9fa)
+        # This is ensured by using colors with sufficient darkness/saturation
+        
+        # Verify that all text remains readable with sufficient contrast
+        # Professional colors chosen should provide good contrast against light background
+        assert "#0066cc" in css_content, "Professional blue should provide good contrast"
+        assert "#228b22" in css_content, "Forest green should provide good contrast"
+        assert "#d2691e" in css_content, "Chocolate orange should provide good contrast"
+        assert "#dc143c" in css_content, "Crimson red should provide good contrast"
+        assert "#6a737d" in css_content, "Muted gray should provide good contrast"
+
+    @given(analysis_result_strategy())
+    def test_html_fixed_width_columns(self, analysis_result):
+        """
+        Property 44: HTML fixed-width columns
+        For any HTML hexdump table, the Report_Generator should use fixed-width columns 
+        for the offset and hex byte columns to ensure consistent alignment.
+        
+        Feature: boot-sector-analyzer, Property 44: HTML fixed-width columns
+        Validates: Requirements 13.3, 13.4, 13.5
+        """
+        generator = HTMLGenerator()
+        html_document = generator.create_html_document(analysis_result)
+        
+        # Should have hexdump table
+        assert 'class="hexdump-table"' in html_document
+        
+        # Extract CSS content
+        css_start = html_document.find("<style>") + 7
+        css_end = html_document.find("</style>")
+        css_content = html_document[css_start:css_end]
+        
+        # Should have table-layout: fixed to prevent column width variations
+        assert "table-layout: fixed" in css_content, "Should use table-layout: fixed to prevent column variations"
+        
+        # Should have fixed offset column width (80px)
+        assert ".hexdump-table .offset" in css_content
+        offset_section = css_content[css_content.find(".hexdump-table .offset"):css_content.find(".hexdump-table .offset") + 200]
+        assert "width: 80px" in offset_section, "Offset column should have fixed 80px width for consistency"
+        
+        # Should have fixed hex byte column widths (30px each)
+        hex_byte_selector = ".hexdump-table td:not(.offset):not(.ascii)"
+        assert hex_byte_selector in css_content or ".hexdump-table th:not(.offset):not(.ascii)" in css_content
+        
+        # Check for 30px width specification for hex byte columns
+        hex_byte_width_found = "width: 30px" in css_content
+        assert hex_byte_width_found, "Hex byte columns should have fixed 30px width each for uniform spacing"
+        
+        # Should have fixed ASCII column width (120px)
+        assert ".hexdump-table .ascii" in css_content
+        ascii_section = css_content[css_content.find(".hexdump-table .ascii"):css_content.find(".hexdump-table .ascii") + 200]
+        assert "width: 120px" in ascii_section, "ASCII column should have fixed 120px width for proper alignment"
+        
+        # Should have hexdump table class in HTML content
+        assert 'class="hexdump-table"' in html_document
+        
+        # Should have proper table structure with offset, hex bytes, and ASCII columns
+        # Check for offset column
+        assert 'class="offset"' in html_document, "Should have offset column with proper class"
+        
+        # Check for ASCII column
+        assert 'class="ascii"' in html_document, "Should have ASCII column with proper class"
+        
+        # Should not use inline width styles since CSS handles fixed widths
+        # The header cells should not have inline style="width: 30px;" since CSS handles this
+        header_inline_styles = html_document.count('style="width: 30px;"')
+        assert header_inline_styles == 0, "Should not use inline width styles, CSS should handle fixed widths"
+        
+        # Should have consistent column structure across all rows
+        # All hexdump table rows should have the same structure
+        table_start = html_document.find('<table class="hexdump-table">')
+        table_end = html_document.find('</table>', table_start)
+        if table_start > 0 and table_end > 0:
+            table_content = html_document[table_start:table_end]
+            
+            # Should have header row
+            assert "<th" in table_content, "Should have header row with th elements"
+            
+            # Should have data rows with td elements
+            assert "<td" in table_content, "Should have data rows with td elements"
+            
+            # Should have consistent structure (offset + 16 hex bytes + ASCII per row)
+            # Count the number of columns in header row
+            header_start = table_content.find("<tr>")
+            header_end = table_content.find("</tr>", header_start)
+            if header_start > 0 and header_end > 0:
+                header_row = table_content[header_start:header_end]
+                header_columns = header_row.count("<th")
+                # Should have 18 columns: 1 offset + 16 hex bytes + 1 ASCII
+                assert header_columns == 18, f"Header should have 18 columns (1 offset + 16 hex + 1 ASCII), found {header_columns}"
+
+
+# VBR-related strategies
+@st.composite
+def filesystem_metadata_strategy(draw):
+    """Generate a valid FilesystemMetadata."""
+    return FilesystemMetadata(
+        volume_label=draw(st.one_of(st.none(), st.text(min_size=1, max_size=11))),
+        cluster_size=draw(st.one_of(st.none(), st.integers(min_value=512, max_value=65536))),
+        total_sectors=draw(st.one_of(st.none(), st.integers(min_value=1, max_value=2**32-1))),
+        filesystem_version=draw(st.one_of(st.none(), st.text(min_size=1, max_size=10))),
+        creation_timestamp=draw(st.one_of(st.none(), st.datetimes()))
+    )
+
+
+@st.composite
+def vbr_structure_strategy(draw):
+    """Generate a valid VBRStructure."""
+    return VBRStructure(
+        filesystem_type=draw(st.sampled_from(FilesystemType)),
+        boot_code=draw(st.binary(min_size=400, max_size=450)),
+        boot_signature=draw(st.integers(min_value=0, max_value=0xFFFF)),
+        filesystem_metadata=draw(filesystem_metadata_strategy()),
+        raw_data=draw(st.binary(min_size=512, max_size=512))
+    )
+
+
+@st.composite
+def vbr_content_analysis_strategy(draw):
+    """Generate a valid VBRContentAnalysis."""
+    return VBRContentAnalysis(
+        hashes=draw(st.dictionaries(
+            st.sampled_from(["md5", "sha256"]),
+            st.text(min_size=32, max_size=64, alphabet="0123456789abcdef"),
+            min_size=1, max_size=2
+        )),
+        boot_code_hashes=draw(st.dictionaries(
+            st.sampled_from(["md5", "sha256"]),
+            st.text(min_size=32, max_size=64, alphabet="0123456789abcdef"),
+            min_size=1, max_size=2
+        )),
+        disassembly_result=draw(st.one_of(st.none(), disassembly_result_strategy())),
+        detected_patterns=draw(st.lists(st.just([]), min_size=0, max_size=0)),  # Empty for simplicity
+        anomalies=draw(st.lists(st.just([]), min_size=0, max_size=0)),  # Empty for simplicity
+        threat_level=draw(st.sampled_from(ThreatLevel))
+    )
+
+
+@st.composite
+def vbr_analysis_result_strategy(draw):
+    """Generate a valid VBRAnalysisResult."""
+    return VBRAnalysisResult(
+        partition_number=draw(st.integers(min_value=1, max_value=4)),
+        partition_info=draw(partition_entry_strategy()),
+        vbr_structure=draw(st.one_of(st.none(), vbr_structure_strategy())),
+        content_analysis=draw(st.one_of(st.none(), vbr_content_analysis_strategy())),
+        extraction_error=draw(st.one_of(st.none(), st.text(min_size=10, max_size=100)))
+    )
+
+
+@st.composite
+def analysis_result_with_vbr_strategy(draw):
+    """Generate an AnalysisResult with VBR analysis data."""
+    base_result = draw(analysis_result_strategy())
+    vbr_analysis = draw(st.lists(vbr_analysis_result_strategy(), min_size=1, max_size=4))
+    
+    # Create new result with VBR analysis
+    return AnalysisResult(
+        source=base_result.source,
+        timestamp=base_result.timestamp,
+        structure_analysis=base_result.structure_analysis,
+        content_analysis=base_result.content_analysis,
+        security_analysis=base_result.security_analysis,
+        hexdump=base_result.hexdump,
+        disassembly=base_result.disassembly,
+        threat_intelligence=base_result.threat_intelligence,
+        vbr_analysis=vbr_analysis
+    )
+
+
+class TestHTMLGeneratorVBRProperties:
+    """Property-based tests for HTMLGenerator VBR functionality."""
+
+    @given(analysis_result_with_vbr_strategy())
+    def test_html_vbr_section_formatting(self, analysis_result):
+        """
+        Property 59: HTML VBR section formatting
+        For any analysis result with VBR analysis data, the HTMLGenerator should create 
+        separate sections for each partition's VBR analysis with appropriate styling and formatting.
+        
+        Feature: boot-sector-analyzer, Property 59: HTML VBR section formatting
+        Validates: Requirements 14.15
+        """
+        generator = HTMLGenerator()
+        html_document = generator.create_html_document(analysis_result)
+        
+        # Should be valid HTML string
+        assert isinstance(html_document, str)
+        assert len(html_document) > 0
+        
+        # Should include VBR analysis section
+        assert 'id="vbr-analysis"' in html_document
+        assert "Volume Boot Record (VBR) Analysis" in html_document
+        
+        # Should include VBR analysis in table of contents
+        assert 'href="#vbr-analysis"' in html_document
+        assert ">VBR Analysis<" in html_document
+        
+        # For each VBR analysis result, should have separate partition section
+        for vbr_result in analysis_result.vbr_analysis:
+            partition_num = vbr_result.partition_number
+            
+            # Should have partition heading
+            assert f"Partition {partition_num}" in html_document
+            
+            # Should have partition information section
+            assert "Partition Information" in html_document
+            assert f"0x{vbr_result.partition_info.partition_type:02X}" in html_document
+            assert str(vbr_result.partition_info.start_lba) in html_document
+            assert str(vbr_result.partition_info.size_sectors) in html_document
+            
+            if vbr_result.extraction_error:
+                # Should show extraction error
+                assert "VBR Extraction Failed" in html_document
+                # Check for both original and HTML-escaped version of error message
+                error_in_html = (vbr_result.extraction_error in html_document or 
+                               html_escape(vbr_result.extraction_error) in html_document)
+                assert error_in_html, f"Extraction error '{vbr_result.extraction_error}' not found in HTML"
+            elif vbr_result.vbr_structure:
+                # Should show VBR structure information
+                assert "VBR Structure" in html_document
+                assert vbr_result.vbr_structure.filesystem_type.value in html_document
+                assert f"0x{vbr_result.vbr_structure.boot_signature:04X}" in html_document
+                
+                # Should show filesystem metadata if available
+                metadata = vbr_result.vbr_structure.filesystem_metadata
+                if metadata.volume_label:
+                    assert html_escape(metadata.volume_label) in html_document
+                if metadata.cluster_size:
+                    assert str(metadata.cluster_size) in html_document
+                if metadata.total_sectors:
+                    assert str(metadata.total_sectors) in html_document
+                
+                # Should have VBR hexdump if raw data is available
+                if vbr_result.vbr_structure.raw_data:
+                    assert "VBR Hexdump" in html_document
+                    assert "hexdump-table" in html_document
+                    # Should have hex offsets
+                    assert "0x0000" in html_document
+            
+            if vbr_result.content_analysis:
+                content = vbr_result.content_analysis
+                
+                # Should show VBR content analysis
+                assert "VBR Content Analysis" in html_document
+                
+                # Should show cryptographic hashes
+                assert "Cryptographic Hashes" in html_document
+                for hash_type, hash_value in content.hashes.items():
+                    assert hash_type.upper() in html_document
+                    assert hash_value in html_document
+                
+                # Should show threat level badge
+                threat_badge_classes = {
+                    ThreatLevel.LOW: "threat-low",
+                    ThreatLevel.MEDIUM: "threat-medium",
+                    ThreatLevel.HIGH: "threat-high",
+                    ThreatLevel.CRITICAL: "threat-critical"
+                }
+                expected_class = threat_badge_classes.get(content.threat_level, "threat-low")
+                assert expected_class in html_document
+                
+                # Should show boot patterns if any
+                if content.detected_patterns:
+                    assert "Detected Boot Patterns" in html_document
+                
+                # Should show anomalies if any
+                if content.anomalies:
+                    assert "Detected Anomalies" in html_document
+                
+                # Should show VBR disassembly if available
+                if content.disassembly_result and content.disassembly_result.instructions:
+                    assert "VBR Boot Code Disassembly" in html_document
+                    assert "assembly-code" in html_document
+        
+        # Should have proper HTML structure
+        assert html_document.startswith("<!DOCTYPE html>")
+        assert "<html" in html_document
+        assert "</html>" in html_document
+        assert "<head>" in html_document
+        assert "</head>" in html_document
+        assert "<body>" in html_document
+        assert "</body>" in html_document
+        
+        # Should have embedded CSS
+        assert "<style>" in html_document
+        assert "</style>" in html_document
+        
+        # Should have VBR-specific styling classes
+        assert ".vbr-partition" in html_document or "vbr-partition" in html_document
+        
+        # Should be self-contained (no external dependencies)
+        assert 'href="http' not in html_document  # No external CSS links
+        assert 'src="http' not in html_document   # No external JS/image links

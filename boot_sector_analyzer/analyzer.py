@@ -12,6 +12,7 @@ from .content_analyzer import ContentAnalyzer
 from .security_scanner import SecurityScanner
 from .internet_checker import InternetChecker
 from .report_generator import ReportGenerator
+from .vbr_analyzer import VBRAnalyzer
 from .exceptions import (
     BootSectorAnalyzerError,
     InputError,
@@ -44,6 +45,7 @@ class BootSectorAnalyzer:
         self.security_scanner = SecurityScanner()
         self.internet_checker = InternetChecker(api_key=api_key, cache_dir=cache_dir)
         self.report_generator = ReportGenerator()
+        self.vbr_analyzer = VBRAnalyzer()
         
         logger.debug("All components initialized successfully")
 
@@ -88,12 +90,18 @@ class BootSectorAnalyzer:
             else:
                 logger.debug("Step 5: Skipping threat intelligence (disabled)")
             
-            # Step 6: Generate hexdump data
-            logger.debug("Step 6: Generating hexdump data")
+            # Step 6: Analyze Volume Boot Records (VBRs)
+            logger.debug("Step 6: Analyzing Volume Boot Records")
+            if logger.isEnabledFor(logging.INFO):
+                logger.info("Performing VBR analysis on valid partitions")
+            vbr_analysis_results = self._analyze_vbrs(source, structure_analysis.mbr_structure)
+            
+            # Step 7: Generate hexdump data
+            logger.debug("Step 7: Generating hexdump data")
             hexdump_data = self._generate_hexdump(boot_sector_data)
             
-            # Step 7: Compile results
-            logger.debug("Step 7: Compiling analysis results")
+            # Step 8: Compile results
+            logger.debug("Step 8: Compiling analysis results")
             result = AnalysisResult(
                 source=str(source),
                 timestamp=datetime.now(),
@@ -102,7 +110,8 @@ class BootSectorAnalyzer:
                 security_analysis=security_analysis,
                 hexdump=hexdump_data,
                 disassembly=content_analysis.disassembly_result,
-                threat_intelligence=threat_intelligence
+                threat_intelligence=threat_intelligence,
+                vbr_analysis=vbr_analysis_results
             )
             
             logger.info(f"Analysis completed successfully - Threat Level: {security_analysis.threat_level.value}")
@@ -350,6 +359,48 @@ class BootSectorAnalyzer:
             logger.debug("Continuing analysis without threat intelligence")
             return None
 
+    def _analyze_vbrs(self, source: Union[str, Path], mbr_structure) -> list:
+        """
+        Analyze Volume Boot Records from valid partitions.
+
+        Args:
+            source: Path to boot sector device or image file
+            mbr_structure: Parsed MBR structure containing partition table
+
+        Returns:
+            List of VBR analysis results
+
+        Note:
+            This method does not raise exceptions - it logs errors and returns
+            partial results to allow analysis to continue even if VBR analysis fails
+        """
+        try:
+            logger.debug("Starting VBR analysis")
+            
+            # Perform VBR analysis using the VBR analyzer
+            vbr_results = self.vbr_analyzer.analyze_vbrs(str(source), mbr_structure)
+            
+            if vbr_results:
+                successful_analyses = sum(1 for result in vbr_results if result.vbr_structure is not None)
+                logger.info(f"VBR analysis completed: {successful_analyses}/{len(vbr_results)} partitions analyzed successfully")
+                
+                # Log details for verbose mode
+                for result in vbr_results:
+                    if result.vbr_structure is not None:
+                        logger.debug(f"Partition {result.partition_number}: VBR analysis successful")
+                    else:
+                        logger.debug(f"Partition {result.partition_number}: VBR analysis failed - {result.extraction_error}")
+            else:
+                logger.info("No VBR analysis results (no valid partitions, disabled, or image file)")
+            
+            return vbr_results
+            
+        except Exception as e:
+            # Don't fail the entire analysis if VBR analysis fails
+            logger.warning(f"VBR analysis failed: {e}")
+            logger.debug("Continuing analysis without VBR results")
+            return []
+
     def _generate_hexdump(self, boot_sector_data: bytes) -> HexdumpData:
         """
         Generate hexdump data for the boot sector.
@@ -425,7 +476,8 @@ class BootSectorAnalyzer:
                 "api_key_configured": bool(self.internet_checker.api_key),
                 "cache_directory": str(self.internet_checker.cache_dir)
             },
-            "report_generator": "initialized"
+            "report_generator": "initialized",
+            "vbr_analyzer": "initialized"
         }
         
         logger.debug(f"Component status: {status}")

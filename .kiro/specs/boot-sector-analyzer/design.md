@@ -1,12 +1,12 @@
-# Design Document: Boot Sector Analyzer v0.2.2
+# Design Document: Boot Sector Analyzer v0.3.0
 
 ## Overview
 
 The Boot Sector Analyzer is a Python console application that performs comprehensive analysis of boot sectors from disk drives or boot sector image files. The system follows a modular architecture with distinct components for structure analysis, content analysis, security scanning, and threat intelligence gathering.
 
-**Version 0.2.2** represents the enhanced release with complete functionality for boot sector analysis, security threat detection, comprehensive reporting capabilities, advanced hexdump functionality for manual review, boot code disassembly with assembly syntax highlighting, HTML report generation with interactive elements and responsive design, individual partition color coding, and improved HTML styling for better readability and professional presentation.
+**Version 0.3.0** represents the enhanced release with complete functionality for boot sector analysis, security threat detection, comprehensive reporting capabilities, advanced hexdump functionality for manual review, boot code disassembly with assembly syntax highlighting, HTML report generation with interactive elements and responsive design, individual partition color coding, improved HTML styling for better readability and professional presentation, and **Volume Boot Record (VBR) detection and analysis** for comprehensive partition-level security assessment.
 
-The application uses Python's built-in `struct` module for binary parsing, integrates with the VirusTotal API for threat intelligence, includes a disassembly engine for x86/x86-64 boot code analysis, and provides human-readable, JSON, and HTML output formats for analysis results.
+The application uses Python's built-in `struct` module for binary parsing, integrates with the VirusTotal API for threat intelligence, includes a disassembly engine for x86/x86-64 boot code analysis, provides human-readable, JSON, and HTML output formats for analysis results, and now includes **VBR analysis capabilities** that automatically detect valid partitions and extract Volume Boot Records for filesystem-specific security analysis.
 
 ## Architecture
 
@@ -21,8 +21,15 @@ graph TB
     Core --> Security[Security Scanner]
     Core --> Internet[Internet Checker]
     Core --> Report[Report Generator]
+    Core --> VBRAnalyzer[VBR Analyzer]
+    
+    Structure --> PartitionScanner[Partition Scanner]
+    VBRAnalyzer --> PartitionScanner
+    VBRAnalyzer --> VBRStructure[VBR Structure Parser]
+    VBRAnalyzer --> VBRContent[VBR Content Analyzer]
     
     Content --> Disasm[Disassembly Engine]
+    VBRContent --> Disasm
     Report --> HTMLGen[HTML Generator]
     Report --> JSONGen[JSON Generator]
     Report --> TextGen[Text Generator]
@@ -32,6 +39,7 @@ graph TB
     Internet --> Cache[Local Cache]
     Report --> Output[Output Files]
     Disasm --> CapstoneLib[Capstone Library]
+    PartitionScanner --> DiskAccess[Direct Disk Access]
 ```
 
 ### Component Responsibilities
@@ -46,6 +54,10 @@ graph TB
 - **Internet Checker**: Queries online threat intelligence sources
 - **Report Generator**: Creates structured analysis reports in multiple formats (human, JSON, HTML)
 - **HTML Generator**: Creates self-contained HTML reports with embedded CSS and syntax highlighting
+- **VBR Analyzer**: Orchestrates Volume Boot Record detection, extraction, and analysis
+- **Partition Scanner**: Identifies valid partitions from MBR analysis and extracts VBR data from disk
+- **VBR Structure Parser**: Parses filesystem-specific VBR structures (FAT, NTFS, exFAT)
+- **VBR Content Analyzer**: Analyzes VBR boot code content, patterns, and security threats
 
 ## Components and Interfaces
 
@@ -180,6 +192,12 @@ class InternetChecker:
     def query_virustotal(self, file_hash: str) -> VirusTotalResult:
         """Query VirusTotal API for threat intelligence"""
         
+    def query_virustotal_boot_code(self, boot_code: bytes) -> Optional[VirusTotalResult]:
+        """Query VirusTotal API specifically for boot code region (446 bytes)"""
+        
+    def should_skip_virustotal(self, boot_code: bytes) -> bool:
+        """Check if boot code is empty (all zeros) and should skip VirusTotal analysis"""
+        
     def cache_results(self, hash_value: str, result: dict) -> None:
         """Cache API results locally"""
         
@@ -193,6 +211,9 @@ class InternetChecker:
 - Rate limiting compliance
 - Graceful degradation when offline
 - SSL certificate validation
+- **Enhanced boot code analysis**: Submit only the boot code region (first 446 bytes) for targeted malware detection
+- **Empty boot code detection**: Skip VirusTotal submission when boot code contains only zero bytes
+- **Complete response inclusion**: Include full VirusTotal response data in reports for comprehensive threat intelligence
 
 ### Report Generator
 
@@ -268,6 +289,116 @@ class HTMLGenerator:
 - Professional styling with proper typography
 - MBR section highlighting in hexdump display
 - Copyable hash values and technical data
+
+### VBR Analyzer
+
+```python
+class VBRAnalyzer:
+    def __init__(self, partition_scanner: PartitionScanner, vbr_structure_parser: VBRStructureParser, 
+                 vbr_content_analyzer: VBRContentAnalyzer):
+        """Initialize VBR analysis components"""
+        
+    def analyze_vbrs(self, source: str, mbr_structure: MBRStructure) -> List[VBRAnalysisResult]:
+        """Analyze VBRs from all valid partitions"""
+        
+    def should_extract_vbrs(self, source: str) -> bool:
+        """Determine if VBR extraction should be performed (only for direct disk access)"""
+        
+    def extract_partition_vbrs(self, source: str, partitions: List[PartitionEntry]) -> List[VBRData]:
+        """Extract VBR data from valid partitions"""
+```
+
+**Responsibilities:**
+- Orchestrate VBR detection and analysis workflow
+- Coordinate between partition scanning, VBR extraction, and analysis
+- Determine when VBR extraction is appropriate (disk vs image file)
+- Handle errors during VBR extraction and continue with remaining partitions
+
+### Partition Scanner
+
+```python
+class PartitionScanner:
+    def identify_valid_partitions(self, mbr_structure: MBRStructure) -> List[ValidPartition]:
+        """Identify valid, non-empty partitions from MBR analysis"""
+        
+    def extract_vbr_data(self, device_path: str, partition: PartitionEntry) -> Optional[bytes]:
+        """Extract 512 bytes from partition's first sector"""
+        
+    def calculate_partition_offset(self, partition: PartitionEntry) -> int:
+        """Calculate byte offset for partition's first sector"""
+        
+    def validate_partition_access(self, device_path: str, partition: PartitionEntry) -> bool:
+        """Validate that partition can be accessed for VBR extraction"""
+```
+
+**Key Features:**
+- Identifies valid partitions from MBR partition table
+- Calculates LBA-to-byte offset conversion for partition access
+- Performs direct disk I/O to extract VBR data
+- Handles I/O errors gracefully and continues with remaining partitions
+- Validates partition boundaries and accessibility
+
+### VBR Structure Parser
+
+```python
+class VBRStructureParser:
+    def parse_vbr_structure(self, vbr_data: bytes, partition_type: int) -> VBRStructure:
+        """Parse VBR structure based on filesystem type"""
+        
+    def parse_fat_vbr(self, vbr_data: bytes) -> FATVBRStructure:
+        """Parse FAT12/16/32 VBR structure"""
+        
+    def parse_ntfs_vbr(self, vbr_data: bytes) -> NTFSVBRStructure:
+        """Parse NTFS VBR structure"""
+        
+    def parse_exfat_vbr(self, vbr_data: bytes) -> ExFATVBRStructure:
+        """Parse exFAT VBR structure"""
+        
+    def detect_filesystem_type(self, vbr_data: bytes, partition_type: int) -> FilesystemType:
+        """Detect filesystem type from VBR signature and partition type"""
+        
+    def extract_vbr_boot_code(self, vbr_structure: VBRStructure) -> bytes:
+        """Extract boot code region from VBR (varies by filesystem)"""
+```
+
+**Parsing Capabilities:**
+- Filesystem-specific VBR structure parsing
+- FAT12/16/32 VBR parsing with BPB (BIOS Parameter Block)
+- NTFS VBR parsing with NTFS-specific metadata
+- exFAT VBR parsing with exFAT boot sector structure
+- Generic VBR parsing for unknown filesystem types
+- Boot code region extraction (varies by filesystem type)
+
+### VBR Content Analyzer
+
+```python
+class VBRContentAnalyzer:
+    def analyze_vbr_content(self, vbr_structure: VBRStructure) -> VBRContentAnalysis:
+        """Perform comprehensive VBR content analysis"""
+        
+    def calculate_vbr_hashes(self, vbr_data: bytes) -> Dict[str, str]:
+        """Calculate MD5 and SHA-256 hashes of VBR data"""
+        
+    def disassemble_vbr_boot_code(self, boot_code: bytes, filesystem_type: FilesystemType) -> DisassemblyResult:
+        """Disassemble VBR boot code with filesystem-specific context"""
+        
+    def detect_vbr_patterns(self, vbr_structure: VBRStructure) -> List[VBRPattern]:
+        """Detect filesystem-specific boot patterns"""
+        
+    def identify_vbr_anomalies(self, vbr_structure: VBRStructure) -> List[VBRAnomalyy]:
+        """Identify suspicious VBR modifications or anomalies"""
+        
+    def extract_filesystem_metadata(self, vbr_structure: VBRStructure) -> FilesystemMetadata:
+        """Extract filesystem-specific metadata (cluster size, volume label, etc.)"""
+```
+
+**Analysis Features:**
+- VBR-specific hash calculation and comparison
+- Filesystem-aware boot code disassembly
+- Detection of common VBR boot patterns (FAT boot code, NTFS boot code)
+- Identification of VBR modifications and anomalies
+- Extraction of filesystem metadata for analysis
+- Integration with existing security scanning capabilities
 
 ### Individual Partition Color Coding
 
@@ -643,8 +774,10 @@ class AnalysisResult:
     content_analysis: ContentAnalysis
     security_analysis: SecurityAnalysis
     threat_intelligence: Optional[ThreatIntelligence]
+    boot_code_threat_intelligence: Optional[ThreatIntelligence]  # New: Boot code specific VirusTotal results
     hexdump: HexdumpData
     disassembly: Optional[DisassemblyResult]
+    vbr_analysis: List[VBRAnalysisResult]  # New: VBR analysis results
     
 @dataclass
 class ContentAnalysis:
@@ -677,6 +810,143 @@ class HTMLReportData:
     table_of_contents: str  # Navigation links
     assembly_highlighted: str  # Syntax-highlighted assembly code
     hexdump_colored: str  # Color-coded hexdump table
+```
+
+### VBR Data Models
+
+```python
+@dataclass
+class VBRAnalysisResult:
+    partition_number: int  # 1-4 based on MBR partition table position
+    partition_info: PartitionEntry  # Original partition entry from MBR
+    vbr_structure: Optional[VBRStructure]  # Parsed VBR structure
+    content_analysis: Optional[VBRContentAnalysis]  # VBR content analysis
+    extraction_error: Optional[str]  # Error message if VBR extraction failed
+    
+@dataclass
+class VBRStructure:
+    filesystem_type: FilesystemType
+    boot_code: bytes  # Boot code region (varies by filesystem)
+    boot_signature: int  # Boot signature (usually 0x55AA)
+    filesystem_metadata: FilesystemMetadata
+    raw_data: bytes  # Complete 512-byte VBR
+    
+@dataclass
+class FATVBRStructure(VBRStructure):
+    bpb: BIOSParameterBlock  # FAT-specific BIOS Parameter Block
+    boot_code_offset: int  # Offset where boot code starts
+    boot_code_size: int  # Size of boot code region
+    
+@dataclass
+class NTFSVBRStructure(VBRStructure):
+    ntfs_bpb: NTFSBIOSParameterBlock  # NTFS-specific BPB
+    mft_cluster: int  # Master File Table cluster location
+    volume_serial: int  # NTFS volume serial number
+    
+@dataclass
+class ExFATVBRStructure(VBRStructure):
+    exfat_bpb: ExFATBIOSParameterBlock  # exFAT-specific BPB
+    fat_offset: int  # File Allocation Table offset
+    cluster_heap_offset: int  # Cluster heap offset
+    
+@dataclass
+class VBRContentAnalysis:
+    hashes: Dict[str, str]  # MD5, SHA-256 hashes of VBR
+    boot_code_hashes: Dict[str, str]  # Hashes of boot code region only
+    disassembly_result: Optional[DisassemblyResult]  # Disassembled boot code
+    detected_patterns: List[VBRPattern]  # Filesystem-specific patterns
+    anomalies: List[VBRAnomalyy]  # Detected anomalies
+    threat_level: ThreatLevel  # VBR-specific threat assessment
+    
+@dataclass
+class VBRPattern:
+    pattern_type: str  # "fat_boot_code", "ntfs_boot_code", "filesystem_check", etc.
+    description: str
+    instructions: List[Instruction]  # Associated assembly instructions
+    significance: str  # What this pattern indicates
+    filesystem_specific: bool  # Whether pattern is filesystem-specific
+    
+@dataclass
+class VBRAnomalyy:
+    anomaly_type: str  # "modified_boot_code", "suspicious_metadata", etc.
+    description: str
+    severity: str  # "low", "medium", "high", "critical"
+    evidence: List[str]  # Supporting evidence for the anomaly
+    
+@dataclass
+class FilesystemMetadata:
+    volume_label: Optional[str]
+    cluster_size: Optional[int]
+    total_sectors: Optional[int]
+    filesystem_version: Optional[str]
+    creation_timestamp: Optional[datetime]
+    
+@dataclass
+class ValidPartition:
+    partition_entry: PartitionEntry
+    partition_number: int  # 1-4
+    start_byte_offset: int  # Calculated byte offset for VBR extraction
+    is_accessible: bool  # Whether partition can be accessed for VBR extraction
+    
+@dataclass
+class VBRData:
+    partition_number: int
+    raw_vbr: bytes  # 512-byte VBR data
+    extraction_successful: bool
+    error_message: Optional[str]
+    
+class FilesystemType(Enum):
+    FAT12 = "fat12"
+    FAT16 = "fat16"
+    FAT32 = "fat32"
+    NTFS = "ntfs"
+    EXFAT = "exfat"
+    EXT2 = "ext2"
+    EXT3 = "ext3"
+    EXT4 = "ext4"
+    UNKNOWN = "unknown"
+
+@dataclass
+class ThreatIntelligence:
+    source: str  # "virustotal", "local_db", etc.
+    query_hash: str  # Hash that was queried
+    detection_count: int  # Number of engines that detected threats
+    total_engines: int  # Total number of scanning engines
+    threat_names: List[str]  # List of threat names from different engines
+    scan_date: datetime  # When the scan was performed
+    permalink: Optional[str]  # Link to full VirusTotal report
+    raw_response: Optional[dict]  # Complete VirusTotal API response
+    analysis_type: str  # "full_boot_sector" or "boot_code_only"
+    
+@dataclass
+class VirusTotalResult:
+    file_hash: str
+    detection_ratio: str  # e.g., "5/67"
+    scan_results: Dict[str, VirusTotalEngineResult]  # Engine name -> result
+    scan_date: datetime
+    permalink: str
+    file_size: int
+    analysis_stats: VirusTotalStats
+    raw_response: dict  # Complete API response for inclusion in reports
+    
+@dataclass
+class VirusTotalEngineResult:
+    engine_name: str
+    detected: bool
+    result: Optional[str]  # Malware name if detected
+    version: str  # Engine version
+    update_date: datetime
+    
+@dataclass
+class VirusTotalStats:
+    harmless: int
+    malicious: int
+    suspicious: int
+    undetected: int
+    timeout: int
+    confirmed_timeout: int
+    failure: int
+    type_unsupported: int
 ```
 
 ## Correctness Properties
@@ -871,6 +1141,74 @@ Based on the prework analysis, I'll convert the testable acceptance criteria int
 *For any* boot sector where the boot code region contains only zero bytes, the Content_Analyzer should skip disassembly processing and display "No boot code present"
 **Validates: Requirements 13.8, 11.10**
 
+**Property 47: Valid partition identification**
+*For any* MBR structure with partition entries, the VBR_Analyzer should identify all valid, non-empty partitions correctly
+**Validates: Requirements 14.1**
+
+**Property 48: VBR extraction completeness**
+*For any* valid partition detected from MBR analysis, the Partition_Scanner should extract exactly 512 bytes from the partition's starting LBA address
+**Validates: Requirements 14.2, 14.3**
+
+**Property 49: VBR extraction error handling**
+*For any* VBR extraction that fails due to I/O errors, the VBR_Analyzer should log the error and continue processing remaining partitions
+**Validates: Requirements 14.4**
+
+**Property 50: Filesystem-specific VBR parsing**
+*For any* VBR data with recognizable filesystem signatures, the VBR_Analyzer should parse the filesystem-specific VBR structure (FAT12/16/32, NTFS, exFAT) correctly
+**Validates: Requirements 14.5**
+
+**Property 51: VBR hash calculation accuracy**
+*For any* VBR data, the VBR_Analyzer should calculate correct MD5 and SHA-256 cryptographic hashes
+**Validates: Requirements 14.6**
+
+**Property 52: VBR boot code disassembly**
+*For any* VBR containing boot code, the VBR_Analyzer should disassemble x86/x86-64 assembly instructions from the VBR boot code region
+**Validates: Requirements 14.7**
+
+**Property 53: VBR pattern and threat detection**
+*For any* VBR data containing suspicious patterns or malware signatures, the VBR_Analyzer should detect and classify them appropriately
+**Validates: Requirements 14.8, 14.13**
+
+**Property 54: VBR report inclusion**
+*For any* analysis with detected partitions, the Report_Generator should include VBR analysis results for each partition in the generated report
+**Validates: Requirements 14.9**
+
+**Property 55: VBR hexdump representation**
+*For any* VBR data in reports, the Report_Generator should provide hexdump representation of each VBR
+**Validates: Requirements 14.10**
+
+**Property 56: Image file VBR extraction handling**
+*For any* analysis of image files (not direct disk access), the VBR_Analyzer should skip VBR extraction and inform the user appropriately
+**Validates: Requirements 14.11**
+
+**Property 57: Empty partition table handling**
+*For any* MBR with no valid partitions, the VBR_Analyzer should report this condition without treating it as an error
+**Validates: Requirements 14.12**
+
+**Property 58: Filesystem-specific boot pattern recognition**
+*For any* VBR boot code containing filesystem-specific patterns, the Content_Analyzer should identify the appropriate filesystem boot patterns (FAT boot code, NTFS boot code)
+**Validates: Requirements 14.14**
+
+**Property 59: HTML VBR section formatting**
+*For any* HTML report containing VBR analysis, the HTML_Generator should provide separate, clearly organized sections for each partition's VBR analysis
+**Validates: Requirements 14.15**
+
+**Property 60: VirusTotal response inclusion**
+*For any* analysis with VirusTotal support enabled, the Report_Generator should include the complete VirusTotal response in all report formats (human, JSON, HTML)
+**Validates: Requirements 5.7**
+
+**Property 61: Boot code specific VirusTotal analysis**
+*For any* boot sector with non-empty boot code, the Internet_Checker should submit only the boot code region (first 446 bytes) to VirusTotal for targeted malware analysis
+**Validates: Requirements 5.8**
+
+**Property 62: Empty boot code VirusTotal handling**
+*For any* boot sector where the boot code region contains only zero bytes, the Internet_Checker should skip VirusTotal submission and report this condition appropriately
+**Validates: Requirements 5.9**
+
+**Property 63: VirusTotal detection results display**
+*For any* VirusTotal analysis performed, the Report_Generator should display detection results, scan statistics, and vendor-specific findings in the analysis report
+**Validates: Requirements 5.10**
+
 ## Error Handling
 
 The system implements comprehensive error handling across all components:
@@ -932,20 +1270,23 @@ The testing approach combines unit testing and property-based testing to ensure 
 - `beautifulsoup4` for HTML structure validation
 - `html5lib` for HTML parsing and validation
 - Mock VirusTotal API responses for offline testing
+- Mock disk I/O operations for VBR extraction testing
 
 **Property Test Configuration**:
 - Minimum 100 iterations per property test
 - Each property test tagged with: **Feature: boot-sector-analyzer, Property {number}: {property_text}**
-- Custom generators for boot sector data, partition tables, malware signatures, and HTML structures
+- Custom generators for boot sector data, partition tables, malware signatures, HTML structures, and VBR data
 - Shrinking enabled to find minimal failing examples
 
 **Test Data Management**:
 - Sample boot sector images for known malware families
 - Clean boot sector samples from various operating systems
+- Sample VBR data for different filesystem types (FAT12/16/32, NTFS, exFAT)
 - Synthetic test data generation for edge cases
 - Mock VirusTotal API responses for offline testing
 - HTML template validation samples
 - Assembly instruction test cases for disassembly validation
+- Mock disk access for VBR extraction testing
 
 **HTML Testing Approach**:
 - Validate HTML document structure and DOCTYPE declarations
@@ -954,6 +1295,7 @@ The testing approach combines unit testing and property-based testing to ensure 
 - Test responsive design CSS rules
 - Validate table of contents and anchor link functionality
 - Test monospace formatting for technical data
+- Validate VBR section formatting and organization
 
 **Disassembly Testing Approach**:
 - Test with known x86/x86-64 instruction sequences
@@ -962,5 +1304,16 @@ The testing approach combines unit testing and property-based testing to ensure 
 - Validate instruction address, opcode, and mnemonic extraction
 - Test pattern recognition for common boot sector operations
 - Verify comment generation for interrupt calls and disk operations
+- Test VBR-specific boot code disassembly
 
-The dual testing approach ensures both specific known cases work correctly (unit tests) and general correctness properties hold across all inputs (property tests), providing comprehensive validation of the boot sector analysis functionality including HTML generation and assembly disassembly.
+**VBR Testing Approach**:
+- Test VBR extraction from mock disk structures
+- Verify filesystem-specific VBR parsing (FAT, NTFS, exFAT)
+- Test VBR hash calculation and comparison
+- Validate VBR boot code disassembly and pattern recognition
+- Test error handling for failed VBR extractions
+- Verify VBR analysis integration into reports
+- Test conditional VBR extraction (disk vs image file)
+- Validate VBR-specific threat detection and security scanning
+
+The dual testing approach ensures both specific known cases work correctly (unit tests) and general correctness properties hold across all inputs (property tests), providing comprehensive validation of the boot sector analysis functionality including HTML generation, assembly disassembly, and VBR analysis capabilities.

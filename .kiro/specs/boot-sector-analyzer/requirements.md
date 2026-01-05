@@ -1,10 +1,10 @@
-# Requirements Document - Boot Sector Analyzer v0.2.2
+# Requirements Document - Boot Sector Analyzer v0.3.0
 
 ## Introduction
 
-A Python console application that performs comprehensive analysis of boot sectors from disk drives or boot sector image files. The system analyzes the structure and content of boot sectors, then cross-references findings against internet resources to identify suspicious deviations or potential security threats.
+A Python console application that performs comprehensive analysis of boot sectors from disk drives or boot sector image files. The system analyzes the structure and content of both Master Boot Records (MBRs) and Volume Boot Records (VBRs), then cross-references findings against internet resources to identify suspicious deviations or potential security threats.
 
-**Version 0.2.2** provides complete implementation of all specified requirements with comprehensive testing and validation, including enhanced hexdump functionality for manual boot sector review, boot code disassembly with assembly syntax highlighting, HTML report generation with interactive elements and responsive design, and improved HTML styling for better readability and professional presentation.
+**Version 0.3.0** provides complete implementation of all specified requirements with comprehensive testing and validation, including enhanced hexdump functionality for manual boot sector review, boot code disassembly with assembly syntax highlighting, HTML report generation with interactive elements and responsive design, improved HTML styling for better readability and professional presentation, and **Volume Boot Record (VBR) detection and analysis** for comprehensive partition-level security assessment.
 
 ## Glossary
 
@@ -16,6 +16,10 @@ A Python console application that performs comprehensive analysis of boot sector
 - **Internet_Checker**: Component that queries online resources for threat intelligence
 - **Report_Generator**: Component that creates analysis reports
 - **Boot_Sector_Image**: A file containing a copy of a boot sector (typically 512 bytes)
+- **VBR**: Volume Boot Record - the first sector of a partition containing filesystem-specific boot code and metadata
+- **VBR_Analyzer**: Component that detects, extracts, and analyzes Volume Boot Records from valid partitions
+- **Partition_Scanner**: Component that identifies valid partitions from MBR analysis for VBR extraction
+- **VBR_Structure**: The parsed structure of a Volume Boot Record, varying by filesystem type (FAT, NTFS, ext4, etc.)
 - **Hexdump**: A hexadecimal representation of binary data displayed in a structured table format for manual review
 - **HTML_Report**: A self-contained HTML document containing analysis results with embedded styling and interactive elements
 - **Boot_Code_Disassembly**: The process of converting machine code bytes into human-readable assembly language instructions
@@ -89,6 +93,10 @@ A Python console application that performs comprehensive analysis of boot sector
 4. THE Internet_Checker SHALL cache threat intelligence results to minimize API calls
 5. WHEN API keys are missing, THE Internet_Checker SHALL inform the user about limited functionality
 6. THE Internet_Checker SHALL validate SSL certificates when making HTTPS requests
+7. WHEN VirusTotal support is enabled, THE Report_Generator SHALL include the complete VirusTotal response in all report formats
+8. WHEN analyzing boot code, THE Internet_Checker SHALL submit only the boot code region (first 446 bytes) to VirusTotal for targeted analysis
+9. WHEN the boot code region contains only zero bytes, THE Internet_Checker SHALL skip VirusTotal submission and report this condition
+10. WHEN VirusTotal analysis is performed, THE Report_Generator SHALL display detection results, scan statistics, and vendor-specific findings in the analysis report
 
 ### Requirement 6: Analysis Report Generation
 
@@ -208,3 +216,25 @@ A Python console application that performs comprehensive analysis of boot sector
 4. THE Boot_Sector_Analyzer SHALL support configurable logging levels (DEBUG, INFO, WARNING, ERROR)
 5. WHEN critical errors occur, THE Boot_Sector_Analyzer SHALL exit gracefully with appropriate exit codes
 6. THE Boot_Sector_Analyzer SHALL log all analysis activities for audit purposes
+
+### Requirement 14: Volume Boot Record (VBR) Detection and Analysis
+
+**User Story:** Als Sicherheitsanalyst möchte ich Volume Boot Records (VBRs) von gültigen Partitionen analysieren, damit ich filesystem-spezifische Boot-Code-Bedrohungen und Anomalien in Partitions-Boot-Sektoren erkennen kann.
+
+#### Acceptance Criteria
+
+1. WHEN analyzing a disk device directly, THE VBR_Analyzer SHALL identify all valid partitions from the MBR partition table
+2. WHEN valid partitions are detected, THE Partition_Scanner SHALL extract the first sector (VBR) from each partition's starting LBA address
+3. WHEN extracting VBR data, THE VBR_Analyzer SHALL read exactly 512 bytes from each partition's first sector
+4. WHEN VBR extraction fails due to I/O errors, THE VBR_Analyzer SHALL log the error and continue with remaining partitions
+5. WHEN analyzing VBR data, THE VBR_Analyzer SHALL parse filesystem-specific VBR structures (FAT12/16/32, NTFS, exFAT)
+6. WHEN analyzing VBR content, THE VBR_Analyzer SHALL calculate cryptographic hashes (MD5, SHA-256) for each VBR
+7. WHEN analyzing VBR boot code, THE VBR_Analyzer SHALL disassemble x86/x86-64 assembly instructions from the VBR boot code region
+8. WHEN analyzing VBR data, THE VBR_Analyzer SHALL detect suspicious patterns and potential malware signatures
+9. WHEN generating reports, THE Report_Generator SHALL include VBR analysis results for each detected partition
+10. WHEN displaying VBR data in reports, THE Report_Generator SHALL provide hexdump representation of each VBR
+11. WHEN analyzing image files (not direct disk access), THE VBR_Analyzer SHALL skip VBR extraction and inform the user
+12. WHEN no valid partitions are found, THE VBR_Analyzer SHALL report this condition without treating it as an error
+13. WHEN VBR analysis is performed, THE Security_Scanner SHALL check VBR hashes against known malware signatures
+14. WHEN VBR boot code is analyzed, THE Content_Analyzer SHALL identify filesystem-specific boot patterns (FAT boot code, NTFS boot code)
+15. WHEN displaying VBR analysis in HTML format, THE HTML_Generator SHALL provide separate sections for each partition's VBR analysis

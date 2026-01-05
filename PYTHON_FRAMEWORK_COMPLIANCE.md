@@ -156,7 +156,7 @@ $ python setup_env.py
 # Direct execution
 $ python3 boot_sector_analyzer.py --help
 $ ./boot_sector_analyzer.py --version
-boot-sector-analyzer 0.1.0
+boot-sector-analyzer 0.3.0
 
 # Package installation
 $ pip install -e .

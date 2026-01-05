@@ -1,5 +1,7 @@
 # Boot Sector Analyzer - .gitignore
 
+surreal70-vt-apikey
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

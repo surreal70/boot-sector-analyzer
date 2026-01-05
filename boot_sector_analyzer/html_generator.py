@@ -1,11 +1,14 @@
 """HTML report generation for boot sector analysis results."""
 
+import logging
 from html import escape as html_escape
 from datetime import datetime
 from typing import List, Dict, Any
 
 from . import __version__
 from .models import AnalysisResult, ThreatLevel, DisassemblyResult, Instruction
+
+logger = logging.getLogger(__name__)
 
 
 class HTMLGenerator:
@@ -82,6 +85,7 @@ class HTMLGenerator:
             {self._generate_content_section_html(analysis_result)}
             {self._generate_security_section_html(analysis_result)}
             {self._generate_threat_intelligence_section_html(analysis_result)}
+            {self._generate_vbr_analysis_section_html(analysis_result)}
             {self._generate_disassembly_section_html(assembly_html)}
             {self._generate_hexdump_section_html(hexdump_html)}
             {self._generate_summary_section_html(analysis_result)}
@@ -289,22 +293,22 @@ body {
 /* Assembly syntax highlighting */
 .assembly-code {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    background-color: #f8f9fa;
-    color: #212529;
+    background-color: #f8f9fa; /* Light background instead of dark theme */
+    color: #212529; /* Dark text for better contrast */
     padding: 20px;
     border-radius: 5px;
-    border: 1px solid #dee2e6;
+    border: 1px solid #dee2e6; /* Subtle border for professional appearance */
     overflow-x: auto;
     line-height: 1.4;
 }
 
 .asm-instruction {
     color: #0066cc; /* Professional blue */
-    font-weight: 500;
+    font-weight: 500; /* Medium font weight */
 }
 
 .asm-register {
-    color: #228b22; /* Forest green */
+    color: #228b22; /* Forest green for better readability */
 }
 
 .asm-immediate {
@@ -316,18 +320,18 @@ body {
 }
 
 .asm-comment {
-    color: #6a737d; /* Muted gray */
+    color: #6a737d; /* Muted gray to reduce visual noise */
     font-style: italic;
 }
 
-/* Hexdump table */
+/* Fixed-width hexdump table */
 .hexdump-table {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     border-collapse: collapse;
     width: 100%;
     font-size: 0.85em;
     background-color: #fff;
-    table-layout: fixed;
+    table-layout: fixed; /* Prevent column width variations */
 }
 
 .hexdump-table th,
@@ -343,22 +347,30 @@ body {
     font-weight: bold;
 }
 
+/* Fixed offset column width for consistency */
 .hexdump-table .offset {
-    width: 80px;
+    width: 80px; /* Fixed 80px width for consistency */
     background-color: #f8f9fa;
     font-weight: bold;
     text-align: right;
     padding: 4px 8px;
 }
 
+/* Fixed hex byte column widths for uniform spacing */
 .hexdump-table td:not(.offset):not(.ascii) {
-    width: 30px;
+    width: 30px; /* Fixed 30px width each for uniform spacing */
     text-align: center;
     padding: 4px 2px;
 }
 
+.hexdump-table th:not(.offset):not(.ascii) {
+    width: 30px; /* Fixed 30px width for header hex columns */
+    text-align: center;
+}
+
+/* Fixed ASCII column width for proper alignment */
 .hexdump-table .ascii {
-    width: 120px;
+    width: 120px; /* Fixed 120px width for proper alignment */
     text-align: left;
     background-color: #f8f9fa;
     padding: 4px 8px;
@@ -620,6 +632,7 @@ body {
                 <li><a href="#content-analysis">Content Analysis</a></li>
                 <li><a href="#security-analysis">Security Analysis</a></li>
                 <li><a href="#threat-intelligence">Threat Intelligence</a></li>
+                <li><a href="#vbr-analysis">VBR Analysis</a></li>
                 <li><a href="#disassembly">Boot Code Disassembly</a></li>
                 <li><a href="#hexdump">Hexdump</a></li>
                 <li><a href="#summary">Summary</a></li>
@@ -653,10 +666,10 @@ body {
         # Create table header
         html_lines = ['<table class="hexdump-table">']
         
-        # Header row with fixed widths
+        # Header row with fixed widths (handled by CSS)
         header_cells = ['<th class="offset">Offset</th>']
         for i in range(16):
-            header_cells.append(f'<th style="width: 30px;">{i:02X}</th>')
+            header_cells.append(f'<th>{i:02X}</th>')
         header_cells.append('<th class="ascii">ASCII</th>')
         html_lines.append(f'<tr>{"".join(header_cells)}</tr>')
         
@@ -917,6 +930,185 @@ body {
         
         html += '</section>'
         return html
+    
+    def _generate_vbr_analysis_section_html(self, analysis_result: AnalysisResult) -> str:
+        """Generate HTML for VBR analysis section."""
+        if not analysis_result.vbr_analysis:
+            return """
+            <section id="vbr-analysis" class="section">
+                <h2>Volume Boot Record (VBR) Analysis</h2>
+                <p>No VBR analysis performed (image file analysis or no valid partitions found).</p>
+            </section>
+            """
+        
+        html = f"""
+        <section id="vbr-analysis" class="section">
+            <h2>Volume Boot Record (VBR) Analysis</h2>
+            <p>Analyzed {len(analysis_result.vbr_analysis)} partition(s) for VBR data:</p>
+        """
+        
+        for vbr_result in analysis_result.vbr_analysis:
+            partition_num = vbr_result.partition_number
+            partition = vbr_result.partition_info
+            
+            html += f"""
+            <div class="vbr-partition" style="margin-bottom: 30px; border: 1px solid #dee2e6; border-radius: 5px; padding: 20px;">
+                <h3>Partition {partition_num}</h3>
+                
+                <h4>Partition Information</h4>
+                <ul class="data-list">
+                    <li><strong>System ID:</strong> <span class="monospace">0x{partition.partition_type:02X}</span></li>
+                    <li><strong>Start LBA:</strong> {partition.start_lba}</li>
+                    <li><strong>Size:</strong> {partition.size_sectors} sectors</li>
+                    <li><strong>Bootable:</strong> {'Yes' if partition.status & 0x80 else 'No'}</li>
+                </ul>
+            """
+            
+            if vbr_result.extraction_error:
+                html += f"""
+                <div class="threat-item">
+                    <h4>VBR Extraction Failed</h4>
+                    <p><strong>Error:</strong> {html_escape(vbr_result.extraction_error)}</p>
+                </div>
+                """
+            
+            # Show VBR structure if available (regardless of extraction error)
+            if vbr_result.vbr_structure:
+                vbr = vbr_result.vbr_structure
+                html += f"""
+                <h4>VBR Structure</h4>
+                <ul class="data-list">
+                    <li><strong>Filesystem:</strong> {html_escape(vbr.filesystem_type.value)}</li>
+                    <li><strong>Boot Signature:</strong> <span class="monospace">0x{vbr.boot_signature:04X}</span></li>
+                """
+                
+                # Filesystem metadata
+                metadata = vbr.filesystem_metadata
+                if metadata.volume_label:
+                    html += f'<li><strong>Volume Label:</strong> {html_escape(metadata.volume_label)}</li>'
+                if metadata.cluster_size:
+                    html += f'<li><strong>Cluster Size:</strong> {metadata.cluster_size} bytes</li>'
+                if metadata.total_sectors:
+                    html += f'<li><strong>Total Sectors:</strong> {metadata.total_sectors}</li>'
+                if metadata.filesystem_version:
+                    html += f'<li><strong>Filesystem Version:</strong> {html_escape(metadata.filesystem_version)}</li>'
+                
+                html += '</ul>'
+            
+            # Show VBR content analysis if available (regardless of extraction error)
+            if vbr_result.content_analysis:
+                    content = vbr_result.content_analysis
+                    
+                    # VBR hashes
+                    html += '<h4>VBR Content Analysis</h4>'
+                    html += '<h5>Cryptographic Hashes</h5><ul class="data-list">'
+                    for hash_type, hash_value in content.hashes.items():
+                        html += f'<li><strong>{hash_type.upper()}:</strong> <span class="hash-value">{hash_value}</span></li>'
+                    html += '</ul>'
+                    
+                    # Boot code hashes if different
+                    if content.boot_code_hashes:
+                        html += '<h5>Boot Code Hashes</h5><ul class="data-list">'
+                        for hash_type, hash_value in content.boot_code_hashes.items():
+                            html += f'<li><strong>{hash_type.upper()}:</strong> <span class="hash-value">{hash_value}</span></li>'
+                        html += '</ul>'
+                    
+                    # Threat level
+                    threat_badge = self.format_threat_level_badge(content.threat_level)
+                    html += f'<h5>VBR Threat Assessment</h5><div style="text-align: center;">{threat_badge}</div>'
+                    
+                    # Boot patterns
+                    if content.detected_patterns:
+                        html += '<h5>Detected Boot Patterns</h5><ul class="data-list">'
+                        for pattern in content.detected_patterns:
+                            html += f'<li><strong>{html_escape(pattern.pattern_type)}:</strong> {html_escape(pattern.description)}'
+                            if pattern.significance:
+                                html += f' <em>({html_escape(pattern.significance)})</em>'
+                            html += '</li>'
+                        html += '</ul>'
+                    
+                    # Anomalies
+                    if content.anomalies:
+                        html += '<h5>Detected Anomalies</h5>'
+                        for anomaly in content.anomalies:
+                            severity_class = "threat-item" if anomaly.severity in ["high", "critical"] else ""
+                            html += f"""
+                            <div class="{severity_class}" style="margin-bottom: 10px;">
+                                <strong>{html_escape(anomaly.anomaly_type)}:</strong> {html_escape(anomaly.description)}
+                                <br><strong>Severity:</strong> {html_escape(anomaly.severity).upper()}
+                            """
+                            if anomaly.evidence:
+                                html += '<br><strong>Evidence:</strong><ul>'
+                                for evidence in anomaly.evidence:
+                                    html += f'<li>{html_escape(evidence)}</li>'
+                                html += '</ul>'
+                            html += '</div>'
+                    
+                    # VBR disassembly
+                    if content.disassembly_result and content.disassembly_result.instructions:
+                        html += '<h5>VBR Boot Code Disassembly</h5>'
+                        vbr_assembly_html = self.format_assembly_syntax_highlighting(content.disassembly_result)
+                        html += vbr_assembly_html
+            
+            # VBR hexdump (show if VBR structure is available, regardless of extraction error)
+            if vbr_result.vbr_structure and vbr_result.vbr_structure.raw_data:
+                html += '<h5>VBR Hexdump</h5>'
+                vbr_hexdump_html = self._format_vbr_hexdump_html(vbr_result.vbr_structure.raw_data)
+                html += vbr_hexdump_html
+            
+            html += '</div>'  # Close vbr-partition div
+        
+        html += '</section>'
+        return html
+    
+    def _format_vbr_hexdump_html(self, vbr_data: bytes) -> str:
+        """
+        Format VBR data as HTML hexdump table.
+        
+        Args:
+            vbr_data: 512-byte VBR data
+            
+        Returns:
+            HTML table with VBR hexdump
+        """
+        if len(vbr_data) != 512:
+            return f'<p class="error">Invalid VBR size: {len(vbr_data)} bytes (expected 512)</p>'
+        
+        # Create table header
+        html_lines = ['<table class="hexdump-table" style="margin-top: 10px;">']
+        
+        # Header row
+        header_cells = ['<th class="offset">Offset</th>']
+        for i in range(16):
+            header_cells.append(f'<th>{i:02X}</th>')
+        header_cells.append('<th class="ascii">ASCII</th>')
+        html_lines.append(f'<tr>{"".join(header_cells)}</tr>')
+        
+        # Data rows
+        for offset in range(0, len(vbr_data), 16):
+            row_data = vbr_data[offset:offset + 16]
+            
+            # Offset cell
+            cells = [f'<td class="offset">0x{offset:04X}</td>']
+            
+            # Hex byte cells
+            for byte_val in row_data:
+                cells.append(f'<td>{byte_val:02X}</td>')
+            
+            # Pad incomplete rows
+            for i in range(len(row_data), 16):
+                cells.append('<td></td>')
+            
+            # ASCII cell
+            ascii_repr = ''.join(
+                chr(b) if 32 <= b <= 126 else '.' for b in row_data
+            )
+            cells.append(f'<td class="ascii">{html_escape(ascii_repr)}</td>')
+            
+            html_lines.append(f'<tr>{"".join(cells)}</tr>')
+        
+        html_lines.append('</table>')
+        return ''.join(html_lines)
     
     def _generate_disassembly_section_html(self, assembly_html: str) -> str:
         """Generate HTML for disassembly section."""

@@ -200,8 +200,8 @@ class TestHTMLIntegration:
                 css_end = html_report.find("</style>")
                 css_content = html_report[css_start:css_end]
                 
-                # Check for assembly syntax highlighting colors
-                assembly_colors = ["#569cd6", "#4ec9b0", "#ce9178", "#f44747"]
+                # Check for assembly syntax highlighting colors (professional scheme)
+                assembly_colors = ["#0066cc", "#228b22", "#d2691e", "#dc143c", "#6a737d"]
                 colors_found = sum(1 for color in assembly_colors if color in css_content)
                 assert colors_found >= 2, "Should have assembly syntax highlighting colors"
                 

@@ -84,9 +84,12 @@ class BootSectorAnalyzer:
             
             # Step 5: Query threat intelligence (optional)
             threat_intelligence = None
+            boot_code_threat_intelligence = None
             if include_threat_intelligence:
                 logger.debug("Step 5: Querying threat intelligence")
-                threat_intelligence = self._query_threat_intelligence(content_analysis.hashes)
+                threat_intelligence, boot_code_threat_intelligence = self._query_threat_intelligence(
+                    content_analysis.hashes, boot_sector_data
+                )
             else:
                 logger.debug("Step 5: Skipping threat intelligence (disabled)")
             
@@ -111,6 +114,7 @@ class BootSectorAnalyzer:
                 hexdump=hexdump_data,
                 disassembly=content_analysis.disassembly_result,
                 threat_intelligence=threat_intelligence,
+                boot_code_threat_intelligence=boot_code_threat_intelligence,
                 vbr_analysis=vbr_analysis_results
             )
             
@@ -313,15 +317,16 @@ class BootSectorAnalyzer:
                     details={"exception_type": type(e).__name__, "error": str(e)}
                 ) from e
 
-    def _query_threat_intelligence(self, hashes: dict) -> Optional[ThreatIntelligence]:
+    def _query_threat_intelligence(self, hashes: dict, boot_sector_data: bytes) -> tuple[Optional[ThreatIntelligence], Optional[ThreatIntelligence]]:
         """
-        Query threat intelligence sources.
+        Query threat intelligence sources for both full boot sector and boot code.
 
         Args:
             hashes: Calculated hashes to query
+            boot_sector_data: Full boot sector data for boot code analysis
 
         Returns:
-            Threat intelligence results or None if query fails
+            Tuple of (full_sector_threat_intelligence, boot_code_threat_intelligence)
 
         Note:
             This method does not raise exceptions - it logs errors and returns None
@@ -330,34 +335,55 @@ class BootSectorAnalyzer:
         try:
             logger.debug("Querying threat intelligence")
             
-            # Query VirusTotal with SHA-256 hash (preferred)
+            # Query VirusTotal with SHA-256 hash (preferred) for full boot sector
             sha256_hash = hashes.get("sha256")
             if not sha256_hash:
                 logger.warning("No SHA-256 hash available for threat intelligence query")
-                return None
+                return None, None
             
+            # Query full boot sector
             virustotal_result = self.internet_checker.query_virustotal(sha256_hash)
             
-            # Create threat intelligence result
-            threat_intelligence = ThreatIntelligence(
-                virustotal_result=virustotal_result,
-                cached=False,  # InternetChecker handles caching internally
-                query_timestamp=datetime.now()
-            )
-            
+            # Create full sector threat intelligence result
+            full_sector_ti = None
             if virustotal_result:
-                logger.debug(f"Threat intelligence query completed: "
+                full_sector_ti = ThreatIntelligence(
+                    virustotal_result=virustotal_result,
+                    cached=False,  # InternetChecker handles caching internally
+                    query_timestamp=datetime.now(),
+                    analysis_type="full_boot_sector"
+                )
+                logger.debug(f"Full boot sector threat intelligence: "
                            f"{virustotal_result.detection_count}/{virustotal_result.total_engines} detections")
             else:
-                logger.debug("No threat intelligence results available")
+                logger.debug("No full boot sector threat intelligence results available")
             
-            return threat_intelligence
+            # Query boot code specific analysis
+            boot_code_ti = None
+            try:
+                boot_code_result = self.internet_checker.query_virustotal_boot_code(boot_sector_data)
+                if boot_code_result:
+                    boot_code_ti = ThreatIntelligence(
+                        virustotal_result=boot_code_result,
+                        cached=False,  # InternetChecker handles caching internally
+                        query_timestamp=datetime.now(),
+                        analysis_type="boot_code_only"
+                    )
+                    logger.debug(f"Boot code threat intelligence: "
+                               f"{boot_code_result.detection_count}/{boot_code_result.total_engines} detections")
+                else:
+                    logger.debug("No boot code threat intelligence results available (empty boot code or not found)")
+            except Exception as e:
+                logger.warning(f"Boot code threat intelligence query failed: {e}")
+                logger.debug("Continuing with full boot sector analysis only")
+            
+            return full_sector_ti, boot_code_ti
             
         except Exception as e:
             # Don't fail the entire analysis if threat intelligence fails
             logger.warning(f"Threat intelligence query failed: {e}")
             logger.debug("Continuing analysis without threat intelligence")
-            return None
+            return None, None
 
     def _analyze_vbrs(self, source: Union[str, Path], mbr_structure) -> list:
         """

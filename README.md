@@ -2,11 +2,11 @@
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-0.3.0-orange.svg)](VERSION)
+[![Version](https://img.shields.io/badge/Version-0.3.2-orange.svg)](VERSION)
 [![Security](https://img.shields.io/badge/Security-Analysis-red.svg)](#security)
 [![Tests](https://img.shields.io/badge/Tests-217%20Passing-brightgreen.svg)](#development)
 
-**Version 0.3.0** - Volume Boot Record (VBR) Analysis Release
+**Version 0.3.2** - Enhanced Negative Result Reporting Release
 
 A comprehensive Python tool for analyzing boot sectors from disk drives or boot sector image files. The system analyzes the structure and content of both Master Boot Records (MBRs) and Volume Boot Records (VBRs), performs x86/x86-64 disassembly, and generates professional HTML reports with responsive design and interactive elements.
 
@@ -26,7 +26,8 @@ A comprehensive Python tool for analyzing boot sectors from disk drives or boot 
 - **Boot Code Disassembly**: x86/x86-64 assembly analysis with pattern recognition
 - **Filesystem Support**: FAT12/16/32, NTFS, and exFAT VBR parsing
 - **Security Scanning**: Check against known malware signatures and bootkit patterns
-- **Threat Intelligence**: Query VirusTotal API for online threat information
+- **Enhanced VirusTotal Integration**: Dual analysis workflow (full MBR vs boot code) with comprehensive negative result reporting
+- **Professional Clean Result Display**: Prominent display of clean results with enhanced formatting and visual indicators
 - **HTML Reports**: Professional, responsive reports with syntax highlighting
 - **Hexdump Display**: Manual review with formatted 17-column table and MBR section highlighting
 - **Multi-Format Output**: Human-readable, JSON, and HTML report formats
@@ -175,6 +176,27 @@ This tool is designed for security analysis purposes. Always ensure you have pro
 - **Verification**: Always verify results through multiple analysis methods for critical assessments
 
 ## 📝 Changelog
+
+### Version 0.3.2 (Enhanced Negative Result Reporting Release)
+
+**Enhanced VirusTotal Integration:**
+- **Dual Analysis Workflow**: Separate reporting for full MBR (512 bytes) and boot code only (446 bytes) analyses
+- **Prominent Clean Result Display**: "✅ CLEAN: 0/X detections" prominently displayed with enhanced messaging
+- **Complete Scan Statistics**: Detailed breakdown of malicious, suspicious, undetected, and harmless counts for all results
+- **Professional HTML Formatting**: Enhanced green status badges and expandable details for clean results
+- **Cross-Format Consistency**: Reliable negative result reporting across human, JSON, and HTML formats
+
+**Technical Enhancements:**
+- **Enhanced Data Models**: Complete VirusTotal response capture with dual analysis support
+- **Property-Based Testing**: 2 new correctness properties (Properties 64-65) for negative result validation
+- **Robust Error Handling**: Enhanced error recovery for VirusTotal API failures
+- **Performance Optimization**: Efficient processing for comprehensive negative result reporting
+
+**Testing & Validation:**
+- 217 total tests passing with comprehensive coverage
+- 65 correctness properties validated (2 new for enhanced negative result reporting)
+- Manual testing with empty and real boot sectors demonstrating enhanced clean result display
+- Cross-format compatibility testing ensuring consistent negative result data
 
 ### Version 0.3.0 (Volume Boot Record Analysis Release)
 

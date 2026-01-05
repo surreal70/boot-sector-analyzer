@@ -3,6 +3,7 @@
 import pytest
 import tempfile
 import os
+import json
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -138,26 +139,68 @@ class TestBootSectorAnalyzerIntegration:
             os.unlink(temp_file_path)
 
     @patch('boot_sector_analyzer.internet_checker.InternetChecker.query_virustotal')
-    def test_complete_analysis_workflow_with_threat_intelligence(self, mock_virustotal):
-        """Test complete analysis workflow with threat intelligence."""
-        # Mock VirusTotal response
-        from boot_sector_analyzer.models import VirusTotalResult
+    @patch('boot_sector_analyzer.internet_checker.InternetChecker.query_virustotal_boot_code')
+    def test_complete_analysis_workflow_with_threat_intelligence(self, mock_virustotal_boot_code, mock_virustotal):
+        """Test complete analysis workflow with enhanced threat intelligence."""
+        # Mock VirusTotal responses
+        from boot_sector_analyzer.models import VirusTotalResult, VirusTotalStats, VirusTotalEngineResult
         from datetime import datetime
         
-        mock_vt_result = VirusTotalResult(
-            hash_value="test_hash",
-            detection_count=2,
+        # Mock full boot sector response
+        mock_vt_result_full = VirusTotalResult(
+            hash_value="test_hash_full",
+            detection_count=1,
             total_engines=50,
             scan_date=datetime.now(),
-            permalink="https://virustotal.com/test",
-            detections={"Engine1": {"detected": True, "result": "Trojan.Test"}}
+            permalink="https://virustotal.com/test_full",
+            detections={"Engine1": {"detected": True, "result": "Suspicious.File"}},
+            stats=VirusTotalStats(
+                malicious=1, suspicious=0, undetected=49, harmless=0,
+                timeout=0, confirmed_timeout=0, failure=0, type_unsupported=0
+            ),
+            engine_results=[
+                VirusTotalEngineResult(
+                    engine_name="Engine1", detected=True, result="Suspicious.File",
+                    category="malicious", engine_version="1.0", engine_update="20240101"
+                )
+            ],
+            raw_response={"id": "test_hash_full", "type": "file", "attributes": {}}
         )
-        mock_virustotal.return_value = mock_vt_result
+        mock_virustotal.return_value = mock_vt_result_full
+        
+        # Mock boot code specific response (more detections)
+        mock_vt_result_boot = VirusTotalResult(
+            hash_value="test_hash_boot",
+            detection_count=3,
+            total_engines=50,
+            scan_date=datetime.now(),
+            permalink="https://virustotal.com/test_boot",
+            detections={
+                "Engine1": {"detected": True, "result": "Trojan.Boot"},
+                "Engine2": {"detected": True, "result": "Malware.Generic"}
+            },
+            stats=VirusTotalStats(
+                malicious=2, suspicious=1, undetected=47, harmless=0,
+                timeout=0, confirmed_timeout=0, failure=0, type_unsupported=0
+            ),
+            engine_results=[
+                VirusTotalEngineResult(
+                    engine_name="Engine1", detected=True, result="Trojan.Boot",
+                    category="malicious", engine_version="1.0", engine_update="20240101"
+                ),
+                VirusTotalEngineResult(
+                    engine_name="Engine2", detected=True, result="Malware.Generic",
+                    category="malicious", engine_version="2.0", engine_update="20240101"
+                )
+            ],
+            raw_response={"id": "test_hash_boot", "type": "file", "attributes": {}}
+        )
+        mock_virustotal_boot_code.return_value = mock_vt_result_boot
         
         # Create analyzer with API key
         analyzer = BootSectorAnalyzer(api_key="test_api_key")
         
-        # Create temporary boot sector file
+        # Create temporary boot sector file with non-empty boot code
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             boot_sector_data = self.create_sample_boot_sector()
             temp_file.write(boot_sector_data)
@@ -167,13 +210,169 @@ class TestBootSectorAnalyzerIntegration:
             # Perform analysis with threat intelligence
             result = analyzer.analyze(temp_file_path, include_threat_intelligence=True)
             
-            # Verify threat intelligence was included
+            # Verify full boot sector threat intelligence was included
             assert result.threat_intelligence is not None
             assert result.threat_intelligence.virustotal_result is not None
-            assert result.threat_intelligence.virustotal_result.detection_count == 2
+            assert result.threat_intelligence.virustotal_result.detection_count == 1
+            assert result.threat_intelligence.analysis_type == "full_boot_sector"
             
-            # Verify VirusTotal was called
+            # Verify boot code specific threat intelligence was included
+            assert result.boot_code_threat_intelligence is not None
+            assert result.boot_code_threat_intelligence.virustotal_result is not None
+            assert result.boot_code_threat_intelligence.virustotal_result.detection_count == 3
+            assert result.boot_code_threat_intelligence.analysis_type == "boot_code_only"
+            
+            # Verify enhanced data is present
+            boot_code_vt = result.boot_code_threat_intelligence.virustotal_result
+            assert boot_code_vt.stats is not None
+            assert boot_code_vt.stats.malicious == 2
+            assert boot_code_vt.stats.suspicious == 1
+            assert len(boot_code_vt.engine_results) == 2
+            assert boot_code_vt.raw_response is not None
+            
+            # Verify both VirusTotal methods were called
             mock_virustotal.assert_called_once()
+            mock_virustotal_boot_code.assert_called_once()
+            
+        finally:
+            # Clean up
+            os.unlink(temp_file_path)
+
+    @patch('boot_sector_analyzer.internet_checker.InternetChecker.query_virustotal')
+    @patch('boot_sector_analyzer.internet_checker.InternetChecker.query_virustotal_boot_code')
+    def test_complete_analysis_workflow_with_clean_threat_intelligence(self, mock_virustotal_boot_code, mock_virustotal):
+        """Test complete analysis workflow with clean (negative) threat intelligence results."""
+        # Mock clean VirusTotal responses
+        from boot_sector_analyzer.models import VirusTotalResult, VirusTotalStats, VirusTotalEngineResult
+        from datetime import datetime
+        
+        # Mock clean full boot sector response
+        mock_vt_result_full = VirusTotalResult(
+            hash_value="clean_hash_full",
+            detection_count=0,
+            total_engines=50,
+            scan_date=datetime.now(),
+            permalink="https://virustotal.com/clean_full",
+            detections={},
+            stats=VirusTotalStats(
+                malicious=0, suspicious=0, undetected=50, harmless=0,
+                timeout=0, confirmed_timeout=0, failure=0, type_unsupported=0
+            ),
+            engine_results=[
+                VirusTotalEngineResult(
+                    engine_name="Avast", detected=False, result=None,
+                    category="undetected", engine_version="21.1.0", engine_update="20240101"
+                ),
+                VirusTotalEngineResult(
+                    engine_name="Kaspersky", detected=False, result=None,
+                    category="undetected", engine_version="15.0.1", engine_update="20240101"
+                )
+            ],
+            raw_response={
+                "id": "clean_hash_full", "type": "file", 
+                "attributes": {
+                    "last_analysis_stats": {"malicious": 0, "suspicious": 0, "undetected": 50, "harmless": 0},
+                    "reputation": 5
+                }
+            }
+        )
+        mock_virustotal.return_value = mock_vt_result_full
+        
+        # Mock clean boot code specific response
+        mock_vt_result_boot = VirusTotalResult(
+            hash_value="clean_hash_boot",
+            detection_count=0,
+            total_engines=50,
+            scan_date=datetime.now(),
+            permalink="https://virustotal.com/clean_boot",
+            detections={},
+            stats=VirusTotalStats(
+                malicious=0, suspicious=0, undetected=48, harmless=2,
+                timeout=0, confirmed_timeout=0, failure=0, type_unsupported=0
+            ),
+            engine_results=[
+                VirusTotalEngineResult(
+                    engine_name="Avast", detected=False, result=None,
+                    category="undetected", engine_version="21.1.0", engine_update="20240101"
+                ),
+                VirusTotalEngineResult(
+                    engine_name="McAfee", detected=False, result=None,
+                    category="harmless", engine_version="6.0.6", engine_update="20240101"
+                )
+            ],
+            raw_response={
+                "id": "clean_hash_boot", "type": "file",
+                "attributes": {
+                    "last_analysis_stats": {"malicious": 0, "suspicious": 0, "undetected": 48, "harmless": 2},
+                    "reputation": 8
+                }
+            }
+        )
+        mock_virustotal_boot_code.return_value = mock_vt_result_boot
+        
+        # Create analyzer with API key
+        analyzer = BootSectorAnalyzer(api_key="test_api_key")
+        
+        # Create temporary boot sector file with non-empty boot code
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            boot_sector_data = self.create_sample_boot_sector()
+            temp_file.write(boot_sector_data)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Perform analysis with threat intelligence
+            result = analyzer.analyze(temp_file_path, include_threat_intelligence=True)
+            
+            # Verify full boot sector threat intelligence was included (clean result)
+            assert result.threat_intelligence is not None
+            assert result.threat_intelligence.virustotal_result is not None
+            assert result.threat_intelligence.virustotal_result.detection_count == 0  # Clean
+            assert result.threat_intelligence.analysis_type == "full_boot_sector"
+            
+            # Verify boot code specific threat intelligence was included (clean result)
+            assert result.boot_code_threat_intelligence is not None
+            assert result.boot_code_threat_intelligence.virustotal_result is not None
+            assert result.boot_code_threat_intelligence.virustotal_result.detection_count == 0  # Clean
+            assert result.boot_code_threat_intelligence.analysis_type == "boot_code_only"
+            
+            # Verify clean stats are present
+            full_vt = result.threat_intelligence.virustotal_result
+            assert full_vt.stats is not None
+            assert full_vt.stats.malicious == 0
+            assert full_vt.stats.suspicious == 0
+            assert full_vt.stats.undetected == 50
+            
+            boot_code_vt = result.boot_code_threat_intelligence.virustotal_result
+            assert boot_code_vt.stats is not None
+            assert boot_code_vt.stats.malicious == 0
+            assert boot_code_vt.stats.suspicious == 0
+            assert boot_code_vt.stats.undetected == 48
+            assert boot_code_vt.stats.harmless == 2
+            
+            # Verify engine results show clean status
+            assert len(full_vt.engine_results) == 2
+            assert len(boot_code_vt.engine_results) == 2
+            
+            for engine_result in full_vt.engine_results + boot_code_vt.engine_results:
+                assert engine_result.detected is False
+                assert engine_result.result is None
+                assert engine_result.category in ["undetected", "harmless"]
+            
+            # Verify both VirusTotal methods were called
+            mock_virustotal.assert_called_once()
+            mock_virustotal_boot_code.assert_called_once()
+            
+            # Test that clean results are prominently displayed in reports
+            human_report = analyzer.generate_report(result, "human")
+            assert "✅ CLEAN: 0/50 detections" in human_report
+            assert "No threats detected" in human_report
+            assert "CLEAN RESULT: 0% detection ratio" in human_report
+            
+            # Test JSON includes clean results
+            json_report = analyzer.generate_report(result, "json")
+            json_data = json.loads(json_report)
+            assert json_data["threat_intelligence"]["virustotal"]["detection_count"] == 0
+            assert json_data["boot_code_threat_intelligence"]["virustotal"]["detection_count"] == 0
             
         finally:
             # Clean up

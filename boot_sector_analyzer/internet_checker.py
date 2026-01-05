@@ -1,5 +1,6 @@
 """Internet-based threat intelligence checking."""
 
+import hashlib
 import json
 import logging
 import time
@@ -10,7 +11,7 @@ from typing import Optional
 import requests
 import vt
 
-from .models import VirusTotalResult
+from .models import VirusTotalResult, VirusTotalEngineResult, VirusTotalStats
 
 logger = logging.getLogger(__name__)
 
@@ -99,22 +100,78 @@ class InternetChecker:
                     # Get scan date
                     scan_date = None
                     if hasattr(file_obj, 'last_analysis_date') and file_obj.last_analysis_date:
-                        scan_date = datetime.fromtimestamp(file_obj.last_analysis_date)
+                        if isinstance(file_obj.last_analysis_date, datetime):
+                            scan_date = file_obj.last_analysis_date
+                        else:
+                            scan_date = datetime.fromtimestamp(file_obj.last_analysis_date)
                     
                     # Get permalink
                     permalink = f"https://www.virustotal.com/gui/file/{file_hash}"
                     
-                    # Get detailed detections
+                    # Get detailed detections (legacy format for backward compatibility)
                     detections = {}
+                    engine_results = []
                     if hasattr(file_obj, 'last_analysis_results') and file_obj.last_analysis_results:
                         for engine, result in file_obj.last_analysis_results.items():
                             if hasattr(result, 'result') and result.result:
+                                # Legacy format
                                 detections[engine] = {
                                     'detected': result.category in ['malicious', 'suspicious'],
                                     'result': result.result,
                                     'category': result.category,
                                     'engine_name': engine
                                 }
+                                
+                                # Enhanced format
+                                engine_results.append(VirusTotalEngineResult(
+                                    engine_name=engine,
+                                    detected=result.category in ['malicious', 'suspicious'],
+                                    result=result.result if result.category in ['malicious', 'suspicious'] else None,
+                                    category=result.category,
+                                    engine_version=getattr(result, 'engine_version', None),
+                                    engine_update=getattr(result, 'engine_update', None)
+                                ))
+
+                    # Create enhanced stats object
+                    vt_stats = None
+                    if stats:
+                        vt_stats = VirusTotalStats(
+                            malicious=stats.get("malicious", 0),
+                            suspicious=stats.get("suspicious", 0),
+                            undetected=stats.get("undetected", 0),
+                            harmless=stats.get("harmless", 0),
+                            timeout=stats.get("timeout", 0),
+                            confirmed_timeout=stats.get("confirmed-timeout", 0),
+                            failure=stats.get("failure", 0),
+                            type_unsupported=stats.get("type-unsupported", 0)
+                        )
+
+                    # Capture complete raw response
+                    raw_response = {}
+                    try:
+                        # Convert file object to dictionary representation
+                        raw_response = {
+                            'id': getattr(file_obj, 'id', file_hash),
+                            'type': getattr(file_obj, 'type', 'file'),
+                            'attributes': {
+                                'last_analysis_stats': stats,
+                                'last_analysis_date': getattr(file_obj, 'last_analysis_date', None),
+                                'last_analysis_results': dict(file_obj.last_analysis_results) if hasattr(file_obj, 'last_analysis_results') else {},
+                                'sha256': file_hash,
+                                'md5': getattr(file_obj, 'md5', None),
+                                'sha1': getattr(file_obj, 'sha1', None),
+                                'size': getattr(file_obj, 'size', None),
+                                'type_description': getattr(file_obj, 'type_description', None),
+                                'magic': getattr(file_obj, 'magic', None),
+                                'first_submission_date': getattr(file_obj, 'first_submission_date', None),
+                                'last_submission_date': getattr(file_obj, 'last_submission_date', None),
+                                'times_submitted': getattr(file_obj, 'times_submitted', None),
+                                'reputation': getattr(file_obj, 'reputation', None)
+                            }
+                        }
+                    except Exception as e:
+                        logger.warning(f"Failed to capture complete raw response: {e}")
+                        raw_response = {'error': f'Failed to capture raw response: {str(e)}'}
 
                     result = VirusTotalResult(
                         hash_value=file_hash,
@@ -123,6 +180,9 @@ class InternetChecker:
                         scan_date=scan_date,
                         permalink=permalink,
                         detections=detections,
+                        stats=vt_stats,
+                        engine_results=engine_results,
+                        raw_response=raw_response
                     )
 
                     # Cache the result
@@ -160,6 +220,204 @@ class InternetChecker:
         except Exception as e:
             logger.error(f"Unexpected error querying VirusTotal: {e}")
             return None
+
+    def query_virustotal_boot_code(self, boot_code: bytes) -> Optional[VirusTotalResult]:
+        """
+        Query VirusTotal API specifically for boot code region (446 bytes).
+        
+        Args:
+            boot_code: Boot code bytes (should be first 446 bytes of boot sector)
+            
+        Returns:
+            VirusTotal result for boot code or None if query failed or boot code is empty
+        """
+        if not self.api_key:
+            logger.warning("No VirusTotal API key provided, skipping boot code analysis")
+            return None
+            
+        # Check if boot code should be skipped (empty/all zeros)
+        if self.should_skip_virustotal(boot_code):
+            logger.info("Boot code region contains only zero bytes, skipping VirusTotal submission")
+            return None
+            
+        # Extract first 446 bytes for targeted analysis
+        boot_code_region = boot_code[:446]
+        
+        # Calculate hash of boot code region
+        boot_code_hash = hashlib.sha256(boot_code_region).hexdigest()
+        
+        # Check cache first
+        cached_result = self._get_cached_result(boot_code_hash)
+        if cached_result:
+            logger.debug(f"Using cached VirusTotal result for boot code hash {boot_code_hash}")
+            return cached_result
+            
+        # Check negative cache
+        if self._check_negative_cache(boot_code_hash):
+            logger.debug(f"Boot code hash {boot_code_hash} previously not found in VirusTotal")
+            return None
+
+        # Check network connectivity before making API call
+        if not self._check_network_connectivity():
+            logger.warning("No network connectivity available, skipping VirusTotal boot code query")
+            return None
+
+        # Rate limiting
+        self._enforce_rate_limit()
+
+        try:
+            # Use vt-py library for API v3
+            with vt.Client(self.api_key) as client:
+                logger.debug(f"Querying VirusTotal API v3 for boot code hash: {boot_code_hash}")
+                
+                try:
+                    file_obj = client.get_object(f"/files/{boot_code_hash}")
+                    
+                    # Extract analysis results
+                    stats = file_obj.last_analysis_stats
+                    detection_count = stats.get("malicious", 0) + stats.get("suspicious", 0)
+                    total_engines = sum(stats.values()) if stats else 0
+                    
+                    # Get scan date
+                    scan_date = None
+                    if hasattr(file_obj, 'last_analysis_date') and file_obj.last_analysis_date:
+                        if isinstance(file_obj.last_analysis_date, datetime):
+                            scan_date = file_obj.last_analysis_date
+                        else:
+                            scan_date = datetime.fromtimestamp(file_obj.last_analysis_date)
+                    
+                    # Get permalink
+                    permalink = f"https://www.virustotal.com/gui/file/{boot_code_hash}"
+                    
+                    # Get detailed detections (legacy format for backward compatibility)
+                    detections = {}
+                    engine_results = []
+                    if hasattr(file_obj, 'last_analysis_results') and file_obj.last_analysis_results:
+                        for engine, result in file_obj.last_analysis_results.items():
+                            if hasattr(result, 'result') and result.result:
+                                # Legacy format
+                                detections[engine] = {
+                                    'detected': result.category in ['malicious', 'suspicious'],
+                                    'result': result.result,
+                                    'category': result.category,
+                                    'engine_name': engine
+                                }
+                                
+                                # Enhanced format
+                                engine_results.append(VirusTotalEngineResult(
+                                    engine_name=engine,
+                                    detected=result.category in ['malicious', 'suspicious'],
+                                    result=result.result if result.category in ['malicious', 'suspicious'] else None,
+                                    category=result.category,
+                                    engine_version=getattr(result, 'engine_version', None),
+                                    engine_update=getattr(result, 'engine_update', None)
+                                ))
+
+                    # Create enhanced stats object
+                    vt_stats = None
+                    if stats:
+                        vt_stats = VirusTotalStats(
+                            malicious=stats.get("malicious", 0),
+                            suspicious=stats.get("suspicious", 0),
+                            undetected=stats.get("undetected", 0),
+                            harmless=stats.get("harmless", 0),
+                            timeout=stats.get("timeout", 0),
+                            confirmed_timeout=stats.get("confirmed-timeout", 0),
+                            failure=stats.get("failure", 0),
+                            type_unsupported=stats.get("type-unsupported", 0)
+                        )
+
+                    # Capture complete raw response
+                    raw_response = {}
+                    try:
+                        # Convert file object to dictionary representation
+                        raw_response = {
+                            'id': getattr(file_obj, 'id', boot_code_hash),
+                            'type': getattr(file_obj, 'type', 'file'),
+                            'attributes': {
+                                'last_analysis_stats': stats,
+                                'last_analysis_date': getattr(file_obj, 'last_analysis_date', None),
+                                'last_analysis_results': dict(file_obj.last_analysis_results) if hasattr(file_obj, 'last_analysis_results') else {},
+                                'sha256': boot_code_hash,
+                                'md5': getattr(file_obj, 'md5', None),
+                                'sha1': getattr(file_obj, 'sha1', None),
+                                'size': getattr(file_obj, 'size', None),
+                                'type_description': getattr(file_obj, 'type_description', None),
+                                'magic': getattr(file_obj, 'magic', None),
+                                'first_submission_date': getattr(file_obj, 'first_submission_date', None),
+                                'last_submission_date': getattr(file_obj, 'last_submission_date', None),
+                                'times_submitted': getattr(file_obj, 'times_submitted', None),
+                                'reputation': getattr(file_obj, 'reputation', None)
+                            }
+                        }
+                    except Exception as e:
+                        logger.warning(f"Failed to capture complete raw response for boot code: {e}")
+                        raw_response = {'error': f'Failed to capture raw response: {str(e)}'}
+
+                    result = VirusTotalResult(
+                        hash_value=boot_code_hash,
+                        detection_count=detection_count,
+                        total_engines=total_engines,
+                        scan_date=scan_date,
+                        permalink=permalink,
+                        detections=detections,
+                        stats=vt_stats,
+                        engine_results=engine_results,
+                        raw_response=raw_response
+                    )
+
+                    # Cache the result
+                    self._cache_result(boot_code_hash, result)
+
+                    logger.info(
+                        f"VirusTotal boot code analysis: {result.detection_count}/{result.total_engines} detections for {boot_code_hash}"
+                    )
+                    return result
+                    
+                except vt.APIError as e:
+                    if e.code == "NotFoundError":
+                        logger.debug(f"Boot code hash not found in VirusTotal: {boot_code_hash}")
+                        # Cache negative result to avoid repeated queries
+                        self._cache_negative_result(boot_code_hash)
+                        return None
+                    elif e.code == "QuotaExceededError":
+                        logger.warning("VirusTotal API quota exceeded, continuing with offline analysis")
+                        return None
+                    else:
+                        logger.error(f"VirusTotal API error: {e}")
+                        return None
+
+        except vt.APIError as e:
+            logger.error(f"VirusTotal API error: {e}")
+            self._handle_network_error(e)
+            return None
+        except requests.exceptions.SSLError as e:
+            logger.error(f"SSL certificate validation failed: {e}")
+            return None
+        except requests.exceptions.RequestException as e:
+            logger.error(f"VirusTotal API request failed: {e}")
+            self._handle_network_error(e)
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error querying VirusTotal for boot code: {e}")
+            return None
+
+    def should_skip_virustotal(self, boot_code: bytes) -> bool:
+        """
+        Check if boot code region contains only zero bytes and should skip VirusTotal analysis.
+        
+        Args:
+            boot_code: Boot code bytes to check
+            
+        Returns:
+            True if boot code is empty (all zeros), False otherwise
+        """
+        if not boot_code:
+            return True
+            
+        # Check first 446 bytes for all zeros
+        boot_code_region = boot_code[:446]
+        return all(byte == 0 for byte in boot_code_region)
 
     def _enforce_rate_limit(self):
         """Enforce API rate limiting with adaptive intervals."""
@@ -274,6 +532,34 @@ class InternetChecker:
 
             # Reconstruct VirusTotalResult
             result_data = data["result"]
+            
+            # Handle enhanced fields with backward compatibility
+            stats = None
+            if "stats" in result_data and result_data["stats"]:
+                stats_data = result_data["stats"]
+                stats = VirusTotalStats(
+                    malicious=stats_data.get("malicious", 0),
+                    suspicious=stats_data.get("suspicious", 0),
+                    undetected=stats_data.get("undetected", 0),
+                    harmless=stats_data.get("harmless", 0),
+                    timeout=stats_data.get("timeout", 0),
+                    confirmed_timeout=stats_data.get("confirmed_timeout", 0),
+                    failure=stats_data.get("failure", 0),
+                    type_unsupported=stats_data.get("type_unsupported", 0)
+                )
+            
+            engine_results = []
+            if "engine_results" in result_data and result_data["engine_results"]:
+                for engine_data in result_data["engine_results"]:
+                    engine_results.append(VirusTotalEngineResult(
+                        engine_name=engine_data["engine_name"],
+                        detected=engine_data["detected"],
+                        result=engine_data.get("result"),
+                        category=engine_data["category"],
+                        engine_version=engine_data.get("engine_version"),
+                        engine_update=engine_data.get("engine_update")
+                    ))
+            
             return VirusTotalResult(
                 hash_value=result_data["hash_value"],
                 detection_count=result_data["detection_count"],
@@ -285,6 +571,9 @@ class InternetChecker:
                 ),
                 permalink=result_data["permalink"],
                 detections=result_data["detections"],
+                stats=stats,
+                engine_results=engine_results,
+                raw_response=result_data.get("raw_response")
             )
 
         except (json.JSONDecodeError, KeyError, ValueError) as e:
@@ -299,6 +588,46 @@ class InternetChecker:
         cache_file = self.cache_dir / f"{file_hash}.json"
 
         try:
+            # Serialize enhanced VirusTotalResult structure
+            stats_data = None
+            if result.stats:
+                stats_data = {
+                    "malicious": result.stats.malicious,
+                    "suspicious": result.stats.suspicious,
+                    "undetected": result.stats.undetected,
+                    "harmless": result.stats.harmless,
+                    "timeout": result.stats.timeout,
+                    "confirmed_timeout": result.stats.confirmed_timeout,
+                    "failure": result.stats.failure,
+                    "type_unsupported": result.stats.type_unsupported
+                }
+            
+            engine_results_data = []
+            if result.engine_results:
+                for engine_result in result.engine_results:
+                    engine_results_data.append({
+                        "engine_name": engine_result.engine_name,
+                        "detected": engine_result.detected,
+                        "result": engine_result.result,
+                        "category": engine_result.category,
+                        "engine_version": engine_result.engine_version,
+                        "engine_update": engine_result.engine_update
+                    })
+            
+            # Serialize raw_response safely
+            raw_response_data = None
+            if result.raw_response:
+                try:
+                    # Convert to JSON-serializable format
+                    if isinstance(result.raw_response, dict):
+                        raw_response_data = result.raw_response
+                    else:
+                        # Convert complex objects to dict representation
+                        raw_response_data = dict(result.raw_response) if hasattr(result.raw_response, '__dict__') else str(result.raw_response)
+                except Exception as e:
+                    logger.debug(f"Could not serialize raw_response: {e}")
+                    raw_response_data = {"error": f"Serialization failed: {str(e)}"}
+            
             cache_data = {
                 "cached_at": datetime.now().isoformat(),
                 "result": {
@@ -310,6 +639,9 @@ class InternetChecker:
                     ),
                     "permalink": result.permalink,
                     "detections": result.detections,
+                    "stats": stats_data,
+                    "engine_results": engine_results_data,
+                    "raw_response": raw_response_data
                 },
             }
 

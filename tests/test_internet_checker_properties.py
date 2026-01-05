@@ -232,3 +232,94 @@ class TestInternetCheckerProperties:
             
             # Verify expired cache file is removed
             assert not cache_file.exists()
+
+    @given(st.binary(min_size=446, max_size=512))
+    def test_boot_code_specific_virustotal_analysis_property(self, boot_code):
+        """
+        Property 61: Boot code specific VirusTotal analysis
+        For any boot sector with non-empty boot code, the Internet_Checker should submit only 
+        the boot code region (first 446 bytes) to VirusTotal for targeted malware analysis.
+        **Validates: Requirements 5.8**
+        """
+        # Feature: boot-sector-analyzer, Property 61: Boot code specific VirusTotal analysis
+        import tempfile
+        import hashlib
+        
+        # Ensure boot code is not all zeros (non-empty)
+        assume(not all(byte == 0 for byte in boot_code[:446]))
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            checker = InternetChecker(api_key="test_api_key", cache_dir=temp_dir)
+            
+            # Calculate expected hash of boot code region (first 446 bytes)
+            boot_code_region = boot_code[:446]
+            expected_hash = hashlib.sha256(boot_code_region).hexdigest()
+            
+            with patch('boot_sector_analyzer.internet_checker.vt.Client') as mock_vt_client:
+                # Mock successful VirusTotal response
+                mock_client_instance = MagicMock()
+                mock_vt_client.return_value.__enter__.return_value = mock_client_instance
+                
+                # Mock file object with analysis results
+                mock_file_obj = Mock()
+                mock_file_obj.last_analysis_stats = {"malicious": 2, "suspicious": 1, "clean": 47}
+                mock_file_obj.last_analysis_date = 1640995200  # Mock timestamp
+                mock_file_obj.last_analysis_results = {
+                    "engine1": Mock(result="Malware.Generic", category="malicious"),
+                    "engine2": Mock(result="Clean", category="clean")
+                }
+                mock_client_instance.get_object.return_value = mock_file_obj
+                
+                # Mock network connectivity
+                with patch.object(checker, '_check_network_connectivity', return_value=True):
+                    result = checker.query_virustotal_boot_code(boot_code)
+                
+                # Verify that VirusTotal was queried with the boot code hash
+                mock_client_instance.get_object.assert_called_once_with(f"/files/{expected_hash}")
+                
+                # Verify result contains boot code hash, not full boot sector hash
+                assert result is not None
+                assert result.hash_value == expected_hash
+                assert result.detection_count == 3  # malicious + suspicious
+                assert result.total_engines == 50  # sum of all stats
+                assert result.permalink == f"https://www.virustotal.com/gui/file/{expected_hash}"
+
+    @given(st.integers(min_value=446, max_value=512))
+    def test_empty_boot_code_virustotal_handling_property(self, boot_sector_size):
+        """
+        Property 62: Empty boot code VirusTotal handling
+        For any boot sector where the boot code region contains only zero bytes, 
+        the Internet_Checker should skip VirusTotal submission and report this condition appropriately.
+        **Validates: Requirements 5.9**
+        """
+        # Feature: boot-sector-analyzer, Property 62: Empty boot code VirusTotal handling
+        import tempfile
+        
+        # Create boot sector with all-zero boot code region (first 446 bytes)
+        boot_code = bytes(446)  # All zeros for boot code region
+        if boot_sector_size > 446:
+            # Add some non-zero data after boot code region (partition table, etc.)
+            remaining_bytes = boot_sector_size - 446
+            if remaining_bytes >= 2:
+                # Add boot signature and padding
+                boot_code += bytes([0x55, 0xAA]) + bytes(remaining_bytes - 2)
+            else:
+                # Just add padding
+                boot_code += bytes(remaining_bytes)
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            checker = InternetChecker(api_key="test_api_key", cache_dir=temp_dir)
+            
+            # Verify should_skip_virustotal returns True for empty boot code
+            assert checker.should_skip_virustotal(boot_code) is True
+            
+            with patch('boot_sector_analyzer.internet_checker.vt.Client') as mock_vt_client:
+                # Mock network connectivity
+                with patch.object(checker, '_check_network_connectivity', return_value=True):
+                    result = checker.query_virustotal_boot_code(boot_code)
+                
+                # Verify that VirusTotal API was NOT called for empty boot code
+                mock_vt_client.assert_not_called()
+                
+                # Verify result is None (skipped)
+                assert result is None

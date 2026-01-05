@@ -1,10 +1,10 @@
-# Design Document: Boot Sector Analyzer v0.3.0
+# Design Document: Boot Sector Analyzer v0.3.2
 
 ## Overview
 
 The Boot Sector Analyzer is a Python console application that performs comprehensive analysis of boot sectors from disk drives or boot sector image files. The system follows a modular architecture with distinct components for structure analysis, content analysis, security scanning, and threat intelligence gathering.
 
-**Version 0.3.0** represents the enhanced release with complete functionality for boot sector analysis, security threat detection, comprehensive reporting capabilities, advanced hexdump functionality for manual review, boot code disassembly with assembly syntax highlighting, HTML report generation with interactive elements and responsive design, individual partition color coding, improved HTML styling for better readability and professional presentation, and **Volume Boot Record (VBR) detection and analysis** for comprehensive partition-level security assessment.
+**Version 0.3.2** represents the enhanced release with complete functionality for boot sector analysis, security threat detection, comprehensive reporting capabilities, advanced hexdump functionality for manual review, boot code disassembly with assembly syntax highlighting, HTML report generation with interactive elements and responsive design, individual partition color coding, improved HTML styling for better readability and professional presentation, Volume Boot Record (VBR) detection and analysis for comprehensive partition-level security assessment, enhanced VirusTotal integration with boot code specific analysis and complete response inclusion, and **Enhanced VirusTotal Negative Result Reporting** with explicit display of clean results for both MBR and boot code analyses.
 
 The application uses Python's built-in `struct` module for binary parsing, integrates with the VirusTotal API for threat intelligence, includes a disassembly engine for x86/x86-64 boot code analysis, provides human-readable, JSON, and HTML output formats for analysis results, and now includes **VBR analysis capabilities** that automatically detect valid partitions and extract Volume Boot Records for filesystem-specific security analysis.
 
@@ -214,6 +214,9 @@ class InternetChecker:
 - **Enhanced boot code analysis**: Submit only the boot code region (first 446 bytes) for targeted malware detection
 - **Empty boot code detection**: Skip VirusTotal submission when boot code contains only zero bytes
 - **Complete response inclusion**: Include full VirusTotal response data in reports for comprehensive threat intelligence
+- **Dual analysis reporting**: Report both entire MBR (512 bytes) and boot code region (446 bytes) analyses separately
+- **Negative result reporting**: Include complete VirusTotal responses even when results are negative (0 detections)
+- **Comprehensive scan data**: Display detection ratios, scan statistics, and vendor-specific findings for both positive and negative results
 
 ### Report Generator
 
@@ -1204,6 +1207,18 @@ Based on the prework analysis, I'll convert the testable acceptance criteria int
 **Property 62: Empty boot code VirusTotal handling**
 *For any* boot sector where the boot code region contains only zero bytes, the Internet_Checker should skip VirusTotal submission and report this condition appropriately
 **Validates: Requirements 5.9**
+
+**Property 63: VirusTotal detection results display**
+*For any* VirusTotal analysis performed, the Report_Generator should display detection results, scan statistics, and vendor-specific findings in the analysis report
+**Validates: Requirements 5.10**
+
+**Property 64: Dual VirusTotal analysis reporting**
+*For any* analysis with VirusTotal support enabled, the Report_Generator should report both entire MBR and boot code region analyses separately, even when results are negative (0 detections)
+**Validates: Requirements 5.11**
+
+**Property 65: Negative VirusTotal result inclusion**
+*For any* VirusTotal analysis that returns negative results (clean/0 detections), the Report_Generator should still include the complete response data showing scan statistics and detection ratios
+**Validates: Requirements 5.12**
 
 **Property 63: VirusTotal detection results display**
 *For any* VirusTotal analysis performed, the Report_Generator should display detection results, scan statistics, and vendor-specific findings in the analysis report

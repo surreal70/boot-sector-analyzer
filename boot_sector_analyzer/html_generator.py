@@ -47,6 +47,9 @@ class HTMLGenerator:
         
         hexdump_html = self.format_hexdump_with_colors(analysis_result.hexdump.raw_data, mbr_structure)
         
+        # Generate threat intelligence section
+        threat_intelligence_html = self._generate_threat_intelligence_section_html(analysis_result)
+        
         # Get current timestamp and version
         generation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         analyzer_version = f"v{__version__}"  # Current version
@@ -84,7 +87,7 @@ class HTMLGenerator:
             {self._generate_structure_section_html(analysis_result)}
             {self._generate_content_section_html(analysis_result)}
             {self._generate_security_section_html(analysis_result)}
-            {self._generate_threat_intelligence_section_html(analysis_result)}
+            {threat_intelligence_html}
             {self._generate_vbr_analysis_section_html(analysis_result)}
             {self._generate_disassembly_section_html(assembly_html)}
             {self._generate_hexdump_section_html(hexdump_html)}
@@ -500,6 +503,261 @@ body {
         color: #000;
     }
 }
+
+/* VirusTotal Enhanced Display Styles */
+.virustotal-summary {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+}
+
+.detection-summary {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.detection-count {
+    font-size: 2em;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.detection-ratio-low {
+    color: #28a745;
+}
+
+.detection-ratio-medium {
+    color: #fd7e14;
+}
+
+.detection-ratio-high {
+    color: #dc3545;
+}
+
+.detection-label {
+    font-size: 1.2em;
+    color: #6c757d;
+    margin-right: 10px;
+}
+
+.detection-ratio {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+/* Enhanced status indicators for negative results */
+.clean-status {
+    background-color: #d4edda !important;
+    border: 2px solid #28a745 !important;
+    color: #155724 !important;
+    font-size: 1.3em;
+}
+
+.low-risk-status {
+    background-color: #fff3cd !important;
+    border: 2px solid #fd7e14 !important;
+    color: #856404 !important;
+    font-size: 1.3em;
+}
+
+.moderate-risk-status {
+    background-color: #fff3cd !important;
+    border: 2px solid #fd7e14 !important;
+    color: #856404 !important;
+    font-size: 1.3em;
+}
+
+.high-risk-status {
+    background-color: #f8d7da !important;
+    border: 2px solid #dc3545 !important;
+    color: #721c24 !important;
+    font-size: 1.3em;
+}
+
+.negative-result-message {
+    font-size: 1.1em;
+    text-align: center;
+}
+
+.scan-statistics {
+    margin-top: 20px;
+}
+
+.scan-statistics h4 {
+    color: #495057;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 5px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: center;
+}
+
+.stat-item.malicious {
+    border-left: 4px solid #dc3545;
+}
+
+.stat-item.suspicious {
+    border-left: 4px solid #fd7e14;
+}
+
+.stat-item.undetected {
+    border-left: 4px solid #28a745;
+}
+
+.stat-item.harmless {
+    border-left: 4px solid #6c757d;
+}
+
+.stat-item.timeout,
+.stat-item.failure {
+    border-left: 4px solid #ffc107;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.9em;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #495057;
+}
+
+.detection-details {
+    margin-top: 20px;
+}
+
+.detection-details-expandable {
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    margin-top: 15px;
+}
+
+.detection-details-expandable summary {
+    background-color: #f8f9fa;
+    padding: 15px;
+    cursor: pointer;
+    border-radius: 5px 5px 0 0;
+    font-weight: bold;
+}
+
+.detection-details-expandable summary:hover {
+    background-color: #e9ecef;
+}
+
+.detection-details-expandable[open] summary {
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 5px 5px 0 0;
+}
+
+.engine-results {
+    padding: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.engine-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    border-left: 4px solid #dee2e6;
+}
+
+.engine-result.category-malicious {
+    background-color: #f8d7da;
+    border-left-color: #dc3545;
+}
+
+.engine-result.category-suspicious {
+    background-color: #fff3cd;
+    border-left-color: #fd7e14;
+}
+
+.engine-result.category-undetected {
+    background-color: #d1ecf1;
+    border-left-color: #17a2b8;
+}
+
+.engine-result.category-harmless {
+    background-color: #d4edda;
+    border-left-color: #28a745;
+}
+
+.engine-name {
+    font-weight: bold;
+    color: #495057;
+    flex: 0 0 150px;
+}
+
+.detection-result {
+    flex: 1;
+    margin: 0 10px;
+    color: #212529;
+}
+
+.detection-category {
+    font-size: 0.9em;
+    color: #6c757d;
+    flex: 0 0 100px;
+    text-align: right;
+}
+
+.engine-version {
+    font-size: 0.8em;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.more-results {
+    text-align: center;
+    padding: 10px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Responsive adjustments for VirusTotal display */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .engine-result {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .engine-name,
+    .detection-category {
+        flex: none;
+        margin-bottom: 5px;
+    }
+    
+    .detection-result {
+        margin: 5px 0;
+    }
+}
 """
     
     def format_threat_level_badge(self, threat_level: ThreatLevel) -> str:
@@ -892,8 +1150,13 @@ body {
         return html
     
     def _generate_threat_intelligence_section_html(self, analysis_result: AnalysisResult) -> str:
-        """Generate HTML for threat intelligence section."""
-        if not analysis_result.threat_intelligence or not analysis_result.threat_intelligence.virustotal_result:
+        """Generate HTML for threat intelligence section with enhanced VirusTotal display."""
+        has_main_threat_intel = (analysis_result.threat_intelligence and 
+                                analysis_result.threat_intelligence.virustotal_result)
+        has_boot_code_threat_intel = (analysis_result.boot_code_threat_intelligence and 
+                                     analysis_result.boot_code_threat_intelligence.virustotal_result)
+        
+        if not has_main_threat_intel and not has_boot_code_threat_intel:
             return """
             <section id="threat-intelligence" class="section">
                 <h2>Threat Intelligence</h2>
@@ -901,34 +1164,281 @@ body {
             </section>
             """
         
-        vt_result = analysis_result.threat_intelligence.virustotal_result
+        html = '<section id="threat-intelligence" class="section">\n<h2>Threat Intelligence</h2>\n'
+        
+        # Generate main threat intelligence section
+        if has_main_threat_intel:
+            try:
+                vt_result = analysis_result.threat_intelligence.virustotal_result
+                analysis_type = getattr(analysis_result.threat_intelligence, 'analysis_type', 'full_boot_sector')
+                analysis_label = "Boot Code Only" if analysis_type == "boot_code_only" else "Full Boot Sector"
+                main_html = self._generate_virustotal_subsection_html(vt_result, analysis_label)
+                html += main_html
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+        
+        # Generate boot code threat intelligence section
+        if has_boot_code_threat_intel:
+            try:
+                boot_vt_result = analysis_result.boot_code_threat_intelligence.virustotal_result
+                boot_analysis_type = getattr(analysis_result.boot_code_threat_intelligence, 'analysis_type', 'boot_code_only')
+                boot_analysis_label = "Boot Code Only" if boot_analysis_type == "boot_code_only" else "Boot Code Analysis"
+                boot_html = self._generate_virustotal_subsection_html(boot_vt_result, boot_analysis_label, section_title="Boot Code VirusTotal Analysis")
+                html += boot_html
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+        
+        html += '</section>'
+        return html
+    
+    def _generate_virustotal_subsection_html(self, vt_result, analysis_label: str, section_title: str = None) -> str:
+        """Generate HTML for a VirusTotal subsection with enhanced negative result display."""
+        if section_title is None:
+            section_title = f"VirusTotal Results ({analysis_label})"
+        else:
+            section_title = f"{section_title} ({analysis_label})"
+        
+        # Determine detection ratio color and status
+        detection_ratio = 0
+        ratio_color = "green"
+        ratio_class = "detection-ratio-low"
+        status_indicator = "✅ CLEAN"
+        status_class = "clean-status"
+        
+        if vt_result.total_engines > 0:
+            detection_ratio = vt_result.detection_count / vt_result.total_engines
+            if detection_ratio == 0:
+                ratio_color = "green"
+                ratio_class = "detection-ratio-low"
+                status_indicator = "✅ CLEAN"
+                status_class = "clean-status"
+            elif detection_ratio >= 0.5:
+                ratio_color = "red"
+                ratio_class = "detection-ratio-high"
+                status_indicator = "🚨 HIGH RISK"
+                status_class = "high-risk-status"
+            elif detection_ratio >= 0.2:
+                ratio_color = "orange"
+                ratio_class = "detection-ratio-medium"
+                status_indicator = "⚠️ MODERATE RISK"
+                status_class = "moderate-risk-status"
+            else:
+                ratio_color = "orange"
+                ratio_class = "detection-ratio-medium"
+                status_indicator = "⚠️ LOW RISK"
+                status_class = "low-risk-status"
         
         html = f"""
-        <section id="threat-intelligence" class="section">
-            <h2>Threat Intelligence</h2>
-            
-            <h3>VirusTotal Results</h3>
-            <ul class="data-list">
-                <li><strong>Detections:</strong> {vt_result.detection_count}/{vt_result.total_engines}</li>
+            <h3>{section_title}</h3>
+            <div class="virustotal-summary">
+                <div class="detection-summary">
+                    <div class="detection-status {status_class}" style="margin-bottom: 15px; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold;">
+                        {status_indicator}
+                    </div>
+                    <span class="detection-count {ratio_class}">
+                        {vt_result.detection_count}/{vt_result.total_engines}
+                    </span>
+                    <span class="detection-label">detections</span>
+                    <span class="detection-ratio" style="color: {ratio_color};">
+                        ({detection_ratio:.1%})
+                    </span>
         """
+        
+        # Add explicit negative result messaging
+        if vt_result.detection_count == 0:
+            html += f"""
+                    <div class="negative-result-message" style="margin-top: 15px; padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; color: #155724;">
+                        <strong>No threats detected:</strong> All {vt_result.total_engines} security engines reported this as clean.
+                    </div>
+            """
+        
+        html += """
+                </div>
+        """
+        
+        # Add scan statistics if available - always show for both positive and negative results
+        if vt_result.stats:
+            stats = vt_result.stats
+            html += f"""
+                <div class="scan-statistics">
+                    <h4>Scan Statistics</h4>
+                    <div class="stats-grid">
+                        <div class="stat-item malicious">
+                            <span class="stat-label">Malicious:</span>
+                            <span class="stat-value">{stats.malicious}</span>
+                        </div>
+                        <div class="stat-item suspicious">
+                            <span class="stat-label">Suspicious:</span>
+                            <span class="stat-value">{stats.suspicious}</span>
+                        </div>
+                        <div class="stat-item undetected">
+                            <span class="stat-label">Undetected:</span>
+                            <span class="stat-value">{stats.undetected}</span>
+                        </div>
+                        <div class="stat-item harmless">
+                            <span class="stat-label">Harmless:</span>
+                            <span class="stat-value">{stats.harmless}</span>
+                        </div>
+            """
+            
+            if stats.timeout > 0 or stats.failure > 0:
+                html += f"""
+                        <div class="stat-item timeout">
+                            <span class="stat-label">Timeout:</span>
+                            <span class="stat-value">{stats.timeout}</span>
+                        </div>
+                        <div class="stat-item failure">
+                            <span class="stat-label">Failure:</span>
+                            <span class="stat-value">{stats.failure}</span>
+                        </div>
+                """
+            
+            html += """
+                    </div>
+                </div>
+            """
+        
+        # Add metadata - always show
+        html += '<ul class="data-list">'
         
         if vt_result.scan_date:
             html += f'<li><strong>Scan Date:</strong> {vt_result.scan_date.strftime("%Y-%m-%d %H:%M:%S")}</li>'
         
+        # Add additional metadata from raw response - always show when available
+        if vt_result.raw_response and isinstance(vt_result.raw_response, dict):
+            attributes = vt_result.raw_response.get('attributes', {})
+            if attributes.get('first_submission_date'):
+                from datetime import datetime
+                first_submission_date = attributes['first_submission_date']
+                if isinstance(first_submission_date, datetime):
+                    first_seen = first_submission_date
+                else:
+                    first_seen = datetime.fromtimestamp(first_submission_date)
+                html += f'<li><strong>First Seen:</strong> {first_seen.strftime("%Y-%m-%d %H:%M:%S")}</li>'
+            if attributes.get('times_submitted'):
+                html += f'<li><strong>Times Submitted:</strong> {attributes["times_submitted"]}</li>'
+            if attributes.get('reputation') is not None:
+                reputation = attributes['reputation']
+                rep_color = "green" if reputation > 0 else "red" if reputation < 0 else "gray"
+                html += f'<li><strong>Reputation Score:</strong> <span style="color: {rep_color};">{reputation}</span></li>'
+        
         if vt_result.permalink:
-            html += f'<li><strong>Report URL:</strong> <a href="{html_escape(vt_result.permalink)}" target="_blank">{html_escape(vt_result.permalink)}</a></li>'
+            html += f'<li><strong>Report URL:</strong> <a href="{html_escape(vt_result.permalink)}" target="_blank">View Full Report</a></li>'
         
-        html += '</ul>'
+        html += '</ul></div>'
         
+        # Add detection details - enhanced for both positive and negative results
         if vt_result.detection_count > 0:
-            html += '<h3>Detection Details</h3><ul class="data-list">'
-            for engine, detection in list(vt_result.detections.items())[:10]:  # Show first 10
-                if detection.get("detected"):
-                    result = detection.get("result", "Unknown")
-                    html += f'<li><strong>{html_escape(engine)}:</strong> {html_escape(result)}</li>'
-            html += '</ul>'
+            html += '<div class="detection-details">'
+            
+            # Create expandable section for detailed results
+            html += '''
+            <details class="detection-details-expandable">
+                <summary><h4>Detection Details</h4></summary>
+                <div class="engine-results">
+            '''
+            
+            # Use enhanced engine results if available
+            if vt_result.engine_results:
+                detected_engines = [e for e in vt_result.engine_results if e.detected]
+                
+                for engine_result in detected_engines:
+                    result_text = html_escape(engine_result.result or 'Detected')
+                    category = engine_result.category
+                    category_class = f"category-{category.lower()}"
+                    
+                    version_info = ""
+                    if engine_result.engine_version:
+                        version_info = f" <span class='engine-version'>[v{html_escape(engine_result.engine_version)}]</span>"
+                    
+                    html += f'''
+                    <div class="engine-result {category_class}">
+                        <span class="engine-name">{html_escape(engine_result.engine_name)}</span>
+                        <span class="detection-result">{result_text}</span>
+                        <span class="detection-category">({category})</span>
+                        {version_info}
+                    </div>
+                    '''
+            else:
+                # Fall back to legacy detections
+                detected_count = 0
+                for engine, detection in vt_result.detections.items():
+                    if detection.get("detected") and detected_count < 20:  # Limit display
+                        result_text = html_escape(detection.get("result", "Unknown"))
+                        category = detection.get("category", "unknown")
+                        category_class = f"category-{category.lower()}"
+                        
+                        html += f'''
+                        <div class="engine-result {category_class}">
+                            <span class="engine-name">{html_escape(engine)}</span>
+                            <span class="detection-result">{result_text}</span>
+                            <span class="detection-category">({category})</span>
+                        </div>
+                        '''
+                        detected_count += 1
+                
+                if len([d for d in vt_result.detections.values() if d.get("detected")]) > 20:
+                    html += '<div class="more-results">... and more detections</div>'
+            
+            html += '''
+                </div>
+            </details>
+            </div>
+            '''
+        else:
+            # Enhanced negative result display with expandable detailed scan statistics
+            html += '''
+            <div class="detection-details">
+                <details class="detection-details-expandable" style="border: 1px solid #c3e6cb; background-color: #f8fff9;">
+                    <summary style="background-color: #d4edda; color: #155724;"><h4>✅ Clean Scan Details</h4></summary>
+                    <div class="engine-results" style="background-color: #f8fff9;">
+            '''
+            
+            # Show clean engines if engine results are available
+            if vt_result.engine_results:
+                clean_engines = [e for e in vt_result.engine_results if not e.detected]
+                
+                if clean_engines:
+                    html += f'<div style="padding: 15px; color: #155724;"><strong>All {len(clean_engines)} engines reported clean:</strong></div>'
+                    
+                    # Show first 10 clean engines as examples
+                    for i, engine_result in enumerate(clean_engines[:10]):
+                        category = engine_result.category or "undetected"
+                        category_class = f"category-{category.lower()}"
+                        
+                        version_info = ""
+                        if engine_result.engine_version:
+                            version_info = f" <span class='engine-version'>[v{html_escape(engine_result.engine_version)}]</span>"
+                        
+                        html += f'''
+                        <div class="engine-result {category_class}" style="background-color: #d4edda; border-left-color: #28a745;">
+                            <span class="engine-name">{html_escape(engine_result.engine_name)}</span>
+                            <span class="detection-result">Clean</span>
+                            <span class="detection-category">({category})</span>
+                            {version_info}
+                        </div>
+                        '''
+                    
+                    if len(clean_engines) > 10:
+                        html += f'<div class="more-results" style="color: #155724;">... and {len(clean_engines) - 10} more engines reported clean</div>'
+            else:
+                # Fallback message for negative results
+                html += f'''
+                <div style="padding: 15px; color: #155724; text-align: center;">
+                    <strong>All {vt_result.total_engines} security engines reported this file as clean.</strong>
+                    <br>No malicious behavior or suspicious patterns detected.
+                </div>
+                '''
+            
+            html += '''
+                </div>
+            </details>
+            </div>
+            '''
         
-        html += '</section>'
+        html += '</div>'
         return html
     
     def _generate_vbr_analysis_section_html(self, analysis_result: AnalysisResult) -> str:

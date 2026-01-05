@@ -1,10 +1,10 @@
-# Requirements Document - Boot Sector Analyzer v0.3.0
+# Requirements Document - Boot Sector Analyzer v0.3.2
 
 ## Introduction
 
 A Python console application that performs comprehensive analysis of boot sectors from disk drives or boot sector image files. The system analyzes the structure and content of both Master Boot Records (MBRs) and Volume Boot Records (VBRs), then cross-references findings against internet resources to identify suspicious deviations or potential security threats.
 
-**Version 0.3.0** provides complete implementation of all specified requirements with comprehensive testing and validation, including enhanced hexdump functionality for manual boot sector review, boot code disassembly with assembly syntax highlighting, HTML report generation with interactive elements and responsive design, improved HTML styling for better readability and professional presentation, and **Volume Boot Record (VBR) detection and analysis** for comprehensive partition-level security assessment.
+**Version 0.3.2** provides complete implementation of all specified requirements with comprehensive testing and validation, including enhanced hexdump functionality for manual boot sector review, boot code disassembly with assembly syntax highlighting, HTML report generation with interactive elements and responsive design, improved HTML styling for better readability and professional presentation, Volume Boot Record (VBR) detection and analysis for comprehensive partition-level security assessment, enhanced VirusTotal integration with boot code specific analysis and complete response inclusion, and **Enhanced VirusTotal Negative Result Reporting** with explicit display of clean results for both MBR and boot code analyses.
 
 ## Glossary
 
@@ -93,10 +93,12 @@ A Python console application that performs comprehensive analysis of boot sector
 4. THE Internet_Checker SHALL cache threat intelligence results to minimize API calls
 5. WHEN API keys are missing, THE Internet_Checker SHALL inform the user about limited functionality
 6. THE Internet_Checker SHALL validate SSL certificates when making HTTPS requests
-7. WHEN VirusTotal support is enabled, THE Report_Generator SHALL include the complete VirusTotal response in all report formats
+7. WHEN VirusTotal support is enabled, THE Report_Generator SHALL include the complete VirusTotal response in all report formats for both positive and negative results
 8. WHEN analyzing boot code, THE Internet_Checker SHALL submit only the boot code region (first 446 bytes) to VirusTotal for targeted analysis
 9. WHEN the boot code region contains only zero bytes, THE Internet_Checker SHALL skip VirusTotal submission and report this condition
 10. WHEN VirusTotal analysis is performed, THE Report_Generator SHALL display detection results, scan statistics, and vendor-specific findings in the analysis report
+11. WHEN VirusTotal analysis is performed on both the entire MBR and boot code region, THE Report_Generator SHALL report both analyses separately even when results are negative (0 detections)
+12. WHEN VirusTotal results are negative (clean), THE Report_Generator SHALL still include the complete response data showing 0 detections and scan statistics
 
 ### Requirement 6: Analysis Report Generation
 

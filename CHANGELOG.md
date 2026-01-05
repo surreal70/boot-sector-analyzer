@@ -5,6 +5,43 @@ All notable changes to the Boot Sector Analyzer project will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-01-05
+
+### Added
+- **Dual Analysis Workflow**: Separate VirusTotal analysis and reporting for full MBR (512 bytes) and boot code only (446 bytes)
+- **Enhanced Negative Result Display**: Prominent "✅ CLEAN: 0/X detections" indicators with professional formatting
+- **Complete Scan Statistics**: Comprehensive breakdown of malicious, suspicious, undetected, and harmless counts for all results
+- **Professional Clean Status Messaging**: "No threats detected: All X security engines reported this as clean"
+- **Enhanced HTML Formatting**: Green status badges and expandable details for clean results
+- **Cross-Format Consistency**: Reliable negative result reporting across human, JSON, and HTML formats
+
+### Enhanced
+- **VirusTotal Integration**: Complete API response capture with dual analysis support
+- **Data Models**: Enhanced structures for comprehensive negative result storage
+- **Report Generation**: Professional styling for clean results across all output formats
+- **Error Handling**: Robust processing for VirusTotal API failures with graceful degradation
+- **HTML Reports**: Enhanced visual indicators and expandable sections for clean results
+
+### Testing
+- **Property-Based Tests**: 2 new correctness properties for negative result validation
+  - Property 64: Dual VirusTotal analysis reporting validation
+  - Property 65: Negative VirusTotal result inclusion verification
+- **Total Coverage**: 65 correctness properties validated with comprehensive test suite
+- **Manual Testing**: Validated with empty and real boot sectors demonstrating enhanced clean result display
+- **Cross-Format Testing**: Ensured consistent negative result data across all output formats
+
+### Performance
+- **Optimized Processing**: Efficient report generation for comprehensive negative result data
+- **Memory Management**: Improved handling of complete VirusTotal response data
+- **Scalable Architecture**: Enhanced support for high-volume analysis workflows
+- **Caching Support**: Improved caching for VirusTotal results with negative result preservation
+
+### Requirements
+- **Requirement 5.11**: Dual analysis reporting for both entire MBR and boot code analyses
+- **Requirement 5.12**: Comprehensive negative result inclusion with prominent display
+- **Enhanced User Experience**: Professional presentation of clean results across all formats
+- **Backward Compatibility**: Full compatibility with existing APIs and configurations
+
 ## [0.2.2] - 2026-01-04
 
 ### Added

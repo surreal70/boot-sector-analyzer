@@ -126,6 +126,32 @@ class SecurityAnalysis:
 
 
 @dataclass
+class VirusTotalEngineResult:
+    """Individual engine result from VirusTotal analysis."""
+
+    engine_name: str
+    detected: bool
+    result: Optional[str]  # Detection name if detected
+    category: str  # "malicious", "suspicious", "clean", "undetected", etc.
+    engine_version: Optional[str] = None
+    engine_update: Optional[str] = None
+
+
+@dataclass
+class VirusTotalStats:
+    """VirusTotal scan statistics."""
+
+    malicious: int
+    suspicious: int
+    undetected: int
+    harmless: int
+    timeout: int
+    confirmed_timeout: int
+    failure: int
+    type_unsupported: int
+
+
+@dataclass
 class VirusTotalResult:
     """Results from VirusTotal API query."""
 
@@ -135,6 +161,15 @@ class VirusTotalResult:
     scan_date: Optional[datetime]
     permalink: Optional[str]
     detections: Dict[str, Any]
+    # Enhanced fields for complete API response
+    stats: Optional[VirusTotalStats] = None
+    engine_results: List[VirusTotalEngineResult] = None
+    raw_response: Optional[Dict[str, Any]] = None  # Complete API response
+
+    def __post_init__(self):
+        """Initialize engine_results as empty list if None."""
+        if self.engine_results is None:
+            self.engine_results = []
 
 
 @dataclass
@@ -144,6 +179,7 @@ class ThreatIntelligence:
     virustotal_result: Optional[VirusTotalResult]
     cached: bool
     query_timestamp: datetime
+    analysis_type: str = "full_boot_sector"  # "full_boot_sector" or "boot_code_only"
 
 
 @dataclass
@@ -208,6 +244,7 @@ class AnalysisResult:
     hexdump: HexdumpData
     disassembly: Optional[DisassemblyResult] = None
     threat_intelligence: Optional[ThreatIntelligence] = None
+    boot_code_threat_intelligence: Optional[ThreatIntelligence] = None  # Boot code specific analysis
     vbr_analysis: List['VBRAnalysisResult'] = None
 
     def __post_init__(self):

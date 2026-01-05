@@ -1,4 +1,4 @@
-# Implementation Plan: Boot Sector Analyzer v0.3.0
+# Implementation Plan: Boot Sector Analyzer v0.3.2
 
 ## Overview
 
@@ -754,77 +754,127 @@ Volume Boot Record (VBR) detection and analysis for comprehensive partition-leve
 
 ## Version 0.3.1 Tasks - Enhanced VirusTotal Integration
 
-- [ ] 41. Implement enhanced VirusTotal boot code analysis
-  - [ ] 41.1 Update InternetChecker for boot code specific analysis
+- [x] 41. Implement enhanced VirusTotal boot code analysis
+  - [x] 41.1 Update InternetChecker for boot code specific analysis
     - Add query_virustotal_boot_code() method to submit only boot code region (446 bytes)
     - Implement should_skip_virustotal() method to detect empty boot code (all zeros)
     - Update existing query_virustotal() method to maintain backward compatibility
     - Add boot code hash calculation and caching for targeted analysis
     - _Requirements: 5.8, 5.9_
 
-  - [ ] 41.2 Write property test for boot code specific VirusTotal analysis
+  - [x] 41.2 Write property test for boot code specific VirusTotal analysis
     - **Property 61: Boot code specific VirusTotal analysis**
     - **Validates: Requirements 5.8**
 
-  - [ ] 41.3 Write property test for empty boot code VirusTotal handling
+  - [x] 41.3 Write property test for empty boot code VirusTotal handling
     - **Property 62: Empty boot code VirusTotal handling**
     - **Validates: Requirements 5.9**
 
-- [ ] 42. Enhance VirusTotal response data models and integration
-  - [ ] 42.1 Update data models for enhanced VirusTotal responses
+- [x] 42. Enhance VirusTotal response data models and integration
+  - [x] 42.1 Update data models for enhanced VirusTotal responses
     - Extend ThreatIntelligence dataclass to include analysis_type field
     - Add VirusTotalResult, VirusTotalEngineResult, and VirusTotalStats dataclasses
     - Update AnalysisResult to include boot_code_threat_intelligence field
     - Ensure complete VirusTotal API response is captured in raw_response field
     - _Requirements: 5.7, 5.10_
 
-  - [ ] 42.2 Update InternetChecker to capture complete VirusTotal responses
+  - [x] 42.2 Update InternetChecker to capture complete VirusTotal responses
     - Modify query_virustotal() and query_virustotal_boot_code() to store full API responses
     - Add parsing for detection ratios, engine results, and scan statistics
     - Implement proper error handling for API response parsing
     - Ensure backward compatibility with existing threat intelligence caching
     - _Requirements: 5.7, 5.10_
 
-- [ ] 43. Update report generation for enhanced VirusTotal data
-  - [ ] 43.1 Update ReportGenerator for complete VirusTotal response inclusion
+- [x] 43. Update report generation for enhanced VirusTotal data
+  - [x] 43.1 Update ReportGenerator for complete VirusTotal response inclusion
     - Modify generate_report() method to include full VirusTotal responses in all formats
     - Add VirusTotal detection results display with scan statistics
     - Include vendor-specific findings and detection ratios in reports
     - Add separate sections for full boot sector vs boot code only analysis
     - _Requirements: 5.7, 5.10_
 
-  - [ ] 43.2 Write property test for VirusTotal response inclusion
+  - [x] 43.2 Write property test for VirusTotal response inclusion
     - **Property 60: VirusTotal response inclusion**
     - **Validates: Requirements 5.7**
 
-  - [ ] 43.3 Write property test for VirusTotal detection results display
+  - [x] 43.3 Write property test for VirusTotal detection results display
     - **Property 63: VirusTotal detection results display**
     - **Validates: Requirements 5.10**
 
-  - [ ] 43.4 Update HTMLGenerator for enhanced VirusTotal display
+  - [x] 43.4 Update HTMLGenerator for enhanced VirusTotal display
     - Add HTML formatting for VirusTotal detection results and statistics
     - Implement color-coded detection ratio display (green/yellow/red based on detection count)
     - Add expandable sections for detailed engine results
     - Include links to full VirusTotal reports when available
     - _Requirements: 5.7, 5.10_
 
-- [ ] 44. Integration and testing for enhanced VirusTotal functionality
-  - [ ] 44.1 Write integration tests for enhanced VirusTotal workflow
+- [-] 44. Integration and testing for enhanced VirusTotal functionality
+  - [x] 44.1 Write integration tests for enhanced VirusTotal workflow
     - Test end-to-end VirusTotal analysis with both full boot sector and boot code only
     - Verify empty boot code detection and VirusTotal skipping
     - Test complete VirusTotal response capture and display
     - Validate VirusTotal data integration across all report formats
     - _Requirements: All enhanced VirusTotal requirements_
 
-  - [ ] 44.2 Update existing tests for VirusTotal enhancements
+  - [x] 44.2 Update existing tests for VirusTotal enhancements
     - Modify existing VirusTotal tests to work with enhanced functionality
     - Add mock responses for boot code specific analysis
     - Test backward compatibility with existing VirusTotal integration
     - Ensure all enhanced VirusTotal properties pass validation
     - _Requirements: 5.7, 5.8, 5.9, 5.10_
 
-- [ ] 45. Final checkpoint - Complete v0.3.1 enhanced VirusTotal validation
+- [x] 45. Final checkpoint - Complete v0.3.1 enhanced VirusTotal validation
   - Ensure all enhanced VirusTotal tests pass, ask the user if questions arise.
+
+## Version 0.3.2 Tasks - Enhanced VirusTotal Negative Result Reporting
+
+- [x] 46. Enhance VirusTotal negative result reporting
+  - [x] 46.1 Update requirements for explicit negative result reporting
+    - Clarify that VirusTotal responses should be reported even when negative (0 detections)
+    - Specify that both entire MBR and boot code analyses should be reported separately
+    - Ensure complete response data is included for both positive and negative results
+    - _Requirements: 5.7, 5.11, 5.12_
+
+  - [x] 46.2 Write property test for dual VirusTotal analysis reporting
+    - **Property 64: Dual VirusTotal analysis reporting**
+    - **Validates: Requirements 5.11**
+
+  - [x] 46.3 Write property test for negative VirusTotal result inclusion
+    - **Property 65: Negative VirusTotal result inclusion**
+    - **Validates: Requirements 5.12**
+
+- [x] 47. Update report generation for enhanced negative result display
+  - [x] 47.1 Update ReportGenerator to explicitly show negative results
+    - Modify generate_report() method to clearly display negative VirusTotal results
+    - Add section headers distinguishing between full MBR and boot code analyses
+    - Include scan statistics and detection ratios even for 0-detection results
+    - Ensure negative results are prominently displayed, not hidden or omitted
+    - _Requirements: 5.7, 5.11, 5.12_
+
+  - [x] 47.2 Update HTMLGenerator for enhanced negative result display
+    - Add HTML formatting for negative VirusTotal results with clear visual indicators
+    - Implement color-coded display showing "Clean" or "No detections" status
+    - Add expandable sections for detailed scan statistics even when negative
+    - Include clear labeling for "Full Boot Sector Analysis" vs "Boot Code Only Analysis"
+    - _Requirements: 5.7, 5.11, 5.12_
+
+- [x] 48. Integration and testing for enhanced negative result reporting
+  - [x] 48.1 Write integration tests for negative result reporting workflow
+    - Test end-to-end analysis with clean boot sectors that return 0 detections
+    - Verify that negative results are prominently displayed in all report formats
+    - Test dual analysis reporting (full MBR vs boot code only) with negative results
+    - Validate that scan statistics are included even for clean results
+    - _Requirements: All enhanced negative result requirements_
+
+  - [x] 48.2 Update existing tests for enhanced negative result handling
+    - Modify existing VirusTotal tests to verify negative result display
+    - Add mock responses for clean/negative VirusTotal results
+    - Test that negative results are not hidden or omitted from reports
+    - Ensure all enhanced negative result properties pass validation
+    - _Requirements: 5.7, 5.11, 5.12_
+
+- [x] 49. Final checkpoint - Complete v0.3.2 enhanced negative result reporting validation
+  - Ensure all enhanced negative result reporting tests pass, ask the user if questions arise.
 
 ## Notes
 
@@ -834,7 +884,8 @@ Volume Boot Record (VBR) detection and analysis for comprehensive partition-leve
 - **Version 0.2.1 Complete**: Individual partition color coding enhancement for improved visual analysis
 - **Version 0.2.2 Complete**: HTML styling improvements for better readability and professional presentation
 - **Version 0.3.0 Complete**: Volume Boot Record (VBR) detection and analysis for comprehensive partition-level security assessment
-- **Version 0.3.1 In Progress**: Enhanced VirusTotal integration with boot code specific analysis and complete response inclusion
+- **Version 0.3.1 Complete**: Enhanced VirusTotal integration with boot code specific analysis and complete response inclusion
+- **Version 0.3.2 Complete**: Enhanced VirusTotal negative result reporting with explicit display of clean results for both MBR and boot code analyses
 - Each task references specific requirements for traceability
 - Checkpoints ensure incremental validation throughout development
 - Property tests validate universal correctness properties using hypothesis library
@@ -851,6 +902,7 @@ Volume Boot Record (VBR) detection and analysis for comprehensive partition-leve
 - **v0.2.2**: 46 total correctness properties (42 existing + 4 new for HTML styling improvements)
 - **v0.3.0**: 59 total correctness properties (46 existing + 13 new for VBR analysis)
 - **v0.3.1**: 63 total correctness properties (59 existing + 4 new for enhanced VirusTotal integration)
+- **v0.3.2**: 65 total correctness properties (63 existing + 2 new for enhanced negative result reporting)
 - Complete test coverage with both unit and integration tests
 - Hexdump feature provides 17-column table format with offset and ASCII representation
 - **New in v0.2.0**: HTML output with embedded CSS, responsive design, and syntax highlighting
@@ -859,8 +911,9 @@ Volume Boot Record (VBR) detection and analysis for comprehensive partition-leve
 - **New in v0.2.2**: HTML styling improvements with light background, fixed-width columns, and empty boot code handling
 - **New in v0.3.0**: Volume Boot Record (VBR) detection and analysis with filesystem-specific parsing, security scanning, and comprehensive reporting
 - **New in v0.3.1**: Enhanced VirusTotal integration with boot code specific analysis, empty boot code detection, and complete response inclusion in reports
+- **New in v0.3.2**: Enhanced VirusTotal negative result reporting with explicit display of clean results, dual analysis reporting (full MBR vs boot code), and comprehensive scan statistics for both positive and negative results
 - **Dependencies**: capstone-engine for disassembly, beautifulsoup4 and html5lib for HTML validation
 - **VBR Analysis**: Supports FAT12/16/32, NTFS, and exFAT filesystem VBR parsing with boot code disassembly
 - **Direct Disk Access**: VBR extraction only performed when analyzing disk devices directly, not image files
 - **Error Resilience**: VBR extraction failures for individual partitions don't stop analysis of remaining partitions
-- **Enhanced VirusTotal**: Submits only boot code region (446 bytes) for targeted analysis, skips submission for empty boot code, includes complete API responses in reports
+- **Enhanced VirusTotal**: Submits only boot code region (446 bytes) for targeted analysis, skips submission for empty boot code, includes complete API responses in reports, explicitly reports both positive and negative results for full MBR and boot code analyses

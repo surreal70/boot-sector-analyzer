@@ -313,20 +313,182 @@ class ReportGenerator:
             lines.append("THREAT INTELLIGENCE")
             lines.append("-" * 20)
             vt_result = result.threat_intelligence.virustotal_result
-            lines.append(
-                f"VirusTotal: {vt_result.detection_count}/{vt_result.total_engines} detections"
-            )
-
+            
+            # Analysis type indicator
+            analysis_type = getattr(result.threat_intelligence, 'analysis_type', 'full_boot_sector')
+            analysis_label = "Boot Code Only" if analysis_type == "boot_code_only" else "Full Boot Sector"
+            lines.append(f"VirusTotal Analysis ({analysis_label}):")
+            
+            # Enhanced detection display - prominently show negative results
+            if vt_result.detection_count == 0:
+                lines.append(f"  ✅ CLEAN: 0/{vt_result.total_engines} detections (No threats detected)")
+            else:
+                lines.append(f"  ⚠️  DETECTIONS: {vt_result.detection_count}/{vt_result.total_engines}")
+            
+            # Enhanced statistics display - always show for both positive and negative results
+            if vt_result.stats:
+                stats = vt_result.stats
+                lines.append("  Scan Statistics:")
+                lines.append(f"    Malicious: {stats.malicious}")
+                lines.append(f"    Suspicious: {stats.suspicious}")
+                lines.append(f"    Undetected: {stats.undetected}")
+                lines.append(f"    Harmless: {stats.harmless}")
+                if stats.timeout > 0:
+                    lines.append(f"    Timeout: {stats.timeout}")
+                if stats.failure > 0:
+                    lines.append(f"    Failure: {stats.failure}")
+            
+            # Scan date and metadata - always show
+            if vt_result.scan_date:
+                lines.append(f"  Scan Date: {vt_result.scan_date.strftime('%Y-%m-%d %H:%M:%S')}")
+            
+            # Detection details with enhanced information
             if vt_result.detection_count > 0:
-                lines.append("Detections:")
-                for engine, detection in list(vt_result.detections.items())[:5]:
-                    if detection.get("detected"):
-                        lines.append(
-                            f"  - {engine}: {detection.get('result', 'Unknown')}"
-                        )
+                lines.append("  Detection Results:")
+                # Show all detections, not just first 5
+                detected_engines = []
+                for engine_result in vt_result.engine_results:
+                    if engine_result.detected:
+                        detected_engines.append(engine_result)
+                
+                # If no engine_results, fall back to legacy detections
+                if not detected_engines and vt_result.detections:
+                    for engine, detection in vt_result.detections.items():
+                        if detection.get("detected"):
+                            result_text = detection.get('result', 'Unknown')
+                            category = detection.get('category', 'unknown')
+                            lines.append(f"    - {engine}: {result_text} ({category})")
+                else:
+                    # Use enhanced engine results
+                    for engine_result in detected_engines:
+                        result_text = engine_result.result or 'Detected'
+                        category = engine_result.category
+                        version_info = ""
+                        if engine_result.engine_version:
+                            version_info = f" [v{engine_result.engine_version}]"
+                        lines.append(f"    - {engine_result.engine_name}: {result_text} ({category}){version_info}")
+            else:
+                # Explicitly show negative result information
+                lines.append("  ✅ No threats detected by any security engine")
+                if vt_result.stats and vt_result.stats.undetected > 0:
+                    lines.append(f"  All {vt_result.stats.undetected} engines reported the file as clean")
+                
+            # Detection ratio analysis - always show, including for negative results
+            if vt_result.total_engines > 0:
+                detection_ratio = vt_result.detection_count / vt_result.total_engines
+                if detection_ratio == 0:
+                    lines.append(f"  ✅ CLEAN RESULT: 0% detection ratio - All engines report clean")
+                elif detection_ratio >= 0.5:
+                    lines.append(f"  ⚠️  HIGH DETECTION RATIO: {detection_ratio:.1%} of engines detected threats")
+                elif detection_ratio >= 0.2:
+                    lines.append(f"  ⚠️  MODERATE DETECTION RATIO: {detection_ratio:.1%} of engines detected threats")
+                else:
+                    lines.append(f"  ℹ️  LOW DETECTION RATIO: {detection_ratio:.1%} of engines detected threats")
+            
+            # Additional metadata from raw response - always show when available
+            if vt_result.raw_response and isinstance(vt_result.raw_response, dict):
+                attributes = vt_result.raw_response.get('attributes', {})
+                if attributes.get('first_submission_date'):
+                    from datetime import datetime
+                    first_seen = datetime.fromtimestamp(attributes['first_submission_date'])
+                    lines.append(f"  First Seen: {first_seen.strftime('%Y-%m-%d %H:%M:%S')}")
+                if attributes.get('times_submitted'):
+                    lines.append(f"  Times Submitted: {attributes['times_submitted']}")
+                if attributes.get('reputation') is not None:
+                    lines.append(f"  Reputation Score: {attributes['reputation']}")
 
             if vt_result.permalink:
-                lines.append(f"VirusTotal Report: {vt_result.permalink}")
+                lines.append(f"  Full Report: {vt_result.permalink}")
+            lines.append("")
+
+        # Boot Code VirusTotal Analysis
+        if result.boot_code_threat_intelligence and result.boot_code_threat_intelligence.virustotal_result:
+            lines.append("BOOT CODE VIRUSTOTAL ANALYSIS")
+            lines.append("-" * 30)
+            boot_vt_result = result.boot_code_threat_intelligence.virustotal_result
+            
+            lines.append("Boot Code VirusTotal Analysis (Boot Code Only):")
+            
+            # Enhanced detection display - prominently show negative results
+            if boot_vt_result.detection_count == 0:
+                lines.append(f"  ✅ CLEAN: 0/{boot_vt_result.total_engines} detections (No threats detected)")
+            else:
+                lines.append(f"  ⚠️  DETECTIONS: {boot_vt_result.detection_count}/{boot_vt_result.total_engines}")
+            
+            # Enhanced statistics display - always show for both positive and negative results
+            if boot_vt_result.stats:
+                stats = boot_vt_result.stats
+                lines.append("  Scan Statistics:")
+                lines.append(f"    Malicious: {stats.malicious}")
+                lines.append(f"    Suspicious: {stats.suspicious}")
+                lines.append(f"    Undetected: {stats.undetected}")
+                lines.append(f"    Harmless: {stats.harmless}")
+                if stats.timeout > 0:
+                    lines.append(f"    Timeout: {stats.timeout}")
+                if stats.failure > 0:
+                    lines.append(f"    Failure: {stats.failure}")
+            
+            # Scan date and metadata - always show
+            if boot_vt_result.scan_date:
+                lines.append(f"  Scan Date: {boot_vt_result.scan_date.strftime('%Y-%m-%d %H:%M:%S')}")
+            
+            # Detection details with enhanced information
+            if boot_vt_result.detection_count > 0:
+                lines.append("  Detection Results:")
+                # Show all detections, not just first 5
+                detected_engines = []
+                for engine_result in boot_vt_result.engine_results:
+                    if engine_result.detected:
+                        detected_engines.append(engine_result)
+                
+                # If no engine_results, fall back to legacy detections
+                if not detected_engines and boot_vt_result.detections:
+                    for engine, detection in boot_vt_result.detections.items():
+                        if detection.get("detected"):
+                            result_text = detection.get('result', 'Unknown')
+                            category = detection.get('category', 'unknown')
+                            lines.append(f"    - {engine}: {result_text} ({category})")
+                else:
+                    # Use enhanced engine results
+                    for engine_result in detected_engines:
+                        result_text = engine_result.result or 'Detected'
+                        category = engine_result.category
+                        version_info = ""
+                        if engine_result.engine_version:
+                            version_info = f" [v{engine_result.engine_version}]"
+                        lines.append(f"    - {engine_result.engine_name}: {result_text} ({category}){version_info}")
+            else:
+                # Explicitly show negative result information
+                lines.append("  ✅ No threats detected by any security engine")
+                if boot_vt_result.stats and boot_vt_result.stats.undetected > 0:
+                    lines.append(f"  All {boot_vt_result.stats.undetected} engines reported the boot code as clean")
+                
+            # Detection ratio analysis - always show, including for negative results
+            if boot_vt_result.total_engines > 0:
+                detection_ratio = boot_vt_result.detection_count / boot_vt_result.total_engines
+                if detection_ratio == 0:
+                    lines.append(f"  ✅ CLEAN RESULT: 0% detection ratio - All engines report clean")
+                elif detection_ratio >= 0.5:
+                    lines.append(f"  ⚠️  HIGH DETECTION RATIO: {detection_ratio:.1%} of engines detected threats")
+                elif detection_ratio >= 0.2:
+                    lines.append(f"  ⚠️  MODERATE DETECTION RATIO: {detection_ratio:.1%} of engines detected threats")
+                else:
+                    lines.append(f"  ℹ️  LOW DETECTION RATIO: {detection_ratio:.1%} of engines detected threats")
+            
+            # Additional metadata from raw response - always show when available
+            if boot_vt_result.raw_response and isinstance(boot_vt_result.raw_response, dict):
+                attributes = boot_vt_result.raw_response.get('attributes', {})
+                if attributes.get('first_submission_date'):
+                    from datetime import datetime
+                    first_seen = datetime.fromtimestamp(attributes['first_submission_date'])
+                    lines.append(f"  First Seen: {first_seen.strftime('%Y-%m-%d %H:%M:%S')}")
+                if attributes.get('times_submitted'):
+                    lines.append(f"  Times Submitted: {attributes['times_submitted']}")
+                if attributes.get('reputation') is not None:
+                    lines.append(f"  Reputation Score: {attributes['reputation']}")
+
+            if boot_vt_result.permalink:
+                lines.append(f"  Full Report: {boot_vt_result.permalink}")
             lines.append("")
 
         # Summary
@@ -531,18 +693,117 @@ class ReportGenerator:
         # Add threat intelligence if available
         if result.threat_intelligence and result.threat_intelligence.virustotal_result:
             vt_result = result.threat_intelligence.virustotal_result
+            
+            # Enhanced VirusTotal data with complete response
+            vt_data = {
+                "detection_count": vt_result.detection_count,
+                "total_engines": vt_result.total_engines,
+                "scan_date": (
+                    vt_result.scan_date.isoformat() if vt_result.scan_date else None
+                ),
+                "permalink": vt_result.permalink,
+                "detections": vt_result.detections,
+                "hash_value": vt_result.hash_value,
+            }
+            
+            # Add enhanced statistics
+            if vt_result.stats:
+                vt_data["stats"] = {
+                    "malicious": vt_result.stats.malicious,
+                    "suspicious": vt_result.stats.suspicious,
+                    "undetected": vt_result.stats.undetected,
+                    "harmless": vt_result.stats.harmless,
+                    "timeout": vt_result.stats.timeout,
+                    "confirmed_timeout": vt_result.stats.confirmed_timeout,
+                    "failure": vt_result.stats.failure,
+                    "type_unsupported": vt_result.stats.type_unsupported,
+                }
+            
+            # Add detailed engine results
+            if vt_result.engine_results:
+                vt_data["engine_results"] = [
+                    {
+                        "engine_name": engine.engine_name,
+                        "detected": engine.detected,
+                        "result": engine.result,
+                        "category": engine.category,
+                        "engine_version": engine.engine_version,
+                        "engine_update": engine.engine_update,
+                    }
+                    for engine in vt_result.engine_results
+                ]
+            
+            # Include complete raw response
+            if vt_result.raw_response:
+                vt_data["raw_response"] = vt_result.raw_response
+            
+            # Calculate detection ratio
+            if vt_result.total_engines > 0:
+                vt_data["detection_ratio"] = vt_result.detection_count / vt_result.total_engines
+            
             report_data["threat_intelligence"] = {
-                "virustotal": {
-                    "detection_count": vt_result.detection_count,
-                    "total_engines": vt_result.total_engines,
-                    "scan_date": (
-                        vt_result.scan_date.isoformat() if vt_result.scan_date else None
-                    ),
-                    "permalink": vt_result.permalink,
-                    "detections": vt_result.detections,
-                },
+                "virustotal": vt_data,
                 "cached": result.threat_intelligence.cached,
                 "query_timestamp": result.threat_intelligence.query_timestamp.isoformat(),
+                "analysis_type": getattr(result.threat_intelligence, 'analysis_type', 'full_boot_sector'),
+            }
+
+        # Add boot code threat intelligence if available
+        if result.boot_code_threat_intelligence and result.boot_code_threat_intelligence.virustotal_result:
+            boot_vt_result = result.boot_code_threat_intelligence.virustotal_result
+            
+            # Enhanced VirusTotal data with complete response for boot code
+            boot_vt_data = {
+                "detection_count": boot_vt_result.detection_count,
+                "total_engines": boot_vt_result.total_engines,
+                "scan_date": (
+                    boot_vt_result.scan_date.isoformat() if boot_vt_result.scan_date else None
+                ),
+                "permalink": boot_vt_result.permalink,
+                "detections": boot_vt_result.detections,
+                "hash_value": boot_vt_result.hash_value,
+            }
+            
+            # Add enhanced statistics
+            if boot_vt_result.stats:
+                boot_vt_data["stats"] = {
+                    "malicious": boot_vt_result.stats.malicious,
+                    "suspicious": boot_vt_result.stats.suspicious,
+                    "undetected": boot_vt_result.stats.undetected,
+                    "harmless": boot_vt_result.stats.harmless,
+                    "timeout": boot_vt_result.stats.timeout,
+                    "confirmed_timeout": boot_vt_result.stats.confirmed_timeout,
+                    "failure": boot_vt_result.stats.failure,
+                    "type_unsupported": boot_vt_result.stats.type_unsupported,
+                }
+            
+            # Add detailed engine results
+            if boot_vt_result.engine_results:
+                boot_vt_data["engine_results"] = [
+                    {
+                        "engine_name": engine.engine_name,
+                        "detected": engine.detected,
+                        "result": engine.result,
+                        "category": engine.category,
+                        "engine_version": engine.engine_version,
+                        "engine_update": engine.engine_update,
+                    }
+                    for engine in boot_vt_result.engine_results
+                ]
+            
+            # Include complete raw response
+            if boot_vt_result.raw_response:
+                boot_vt_data["raw_response"] = boot_vt_result.raw_response
+            
+            # Calculate detection ratio
+            if boot_vt_result.total_engines > 0:
+                boot_vt_data["detection_ratio"] = boot_vt_result.detection_count / boot_vt_result.total_engines
+            
+            report_data["boot_code_threat_intelligence"] = {
+                "virustotal": boot_vt_data,
+                "cached": result.boot_code_threat_intelligence.cached,
+                "query_timestamp": result.boot_code_threat_intelligence.query_timestamp.isoformat(),
+                "analysis_type": getattr(result.boot_code_threat_intelligence, 'analysis_type', 'boot_code_only'),
             }
 
         # Add hexdump data with partition color metadata

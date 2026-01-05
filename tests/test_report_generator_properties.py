@@ -199,14 +199,125 @@ def security_analysis_strategy(draw):
 
 @st.composite
 def virustotal_result_strategy(draw):
-    """Generate a valid VirusTotalResult."""
+    """Generate a valid VirusTotalResult with enhanced fields and consistent data."""
+    from boot_sector_analyzer.models import VirusTotalStats, VirusTotalEngineResult
+    
+    # First determine the total number of engines and detection count
+    total_engines = draw(st.integers(min_value=1, max_value=100))
+    detection_count = draw(st.integers(min_value=0, max_value=total_engines))
+    
+    # Generate enhanced stats that are consistent with detection count
+    stats = None
+    if draw(st.booleans()):
+        # Ensure stats are consistent with detection_count
+        malicious = draw(st.integers(min_value=0, max_value=detection_count))
+        suspicious = detection_count - malicious
+        remaining_engines = total_engines - detection_count
+        
+        undetected = draw(st.integers(min_value=0, max_value=remaining_engines))
+        harmless = remaining_engines - undetected
+        
+        stats = VirusTotalStats(
+            malicious=malicious,
+            suspicious=suspicious,
+            undetected=undetected,
+            harmless=harmless,
+            timeout=draw(st.integers(min_value=0, max_value=5)),
+            confirmed_timeout=draw(st.integers(min_value=0, max_value=2)),
+            failure=draw(st.integers(min_value=0, max_value=3)),
+            type_unsupported=draw(st.integers(min_value=0, max_value=2))
+        )
+    
+    # Generate engine results that are consistent with detection_count
+    engine_results = []
+    generate_engine_results = draw(st.booleans())
+    if generate_engine_results:
+        # Generate exactly detection_count detected engines plus some undetected ones
+        detected_engines = []
+        undetected_engines = []
+        
+        # Create detected engines
+        for i in range(detection_count):
+            detected_engines.append(VirusTotalEngineResult(
+                engine_name=f"Engine{i}",
+                detected=True,
+                result=draw(st.text(min_size=1, max_size=50)),
+                category=draw(st.sampled_from(["malicious", "suspicious"])),
+                engine_version=draw(st.one_of(st.none(), st.text(min_size=1, max_size=20))),
+                engine_update=draw(st.one_of(st.none(), st.text(min_size=1, max_size=20)))
+            ))
+        
+        # Create some undetected engines
+        num_undetected = draw(st.integers(min_value=0, max_value=min(10, total_engines - detection_count)))
+        for i in range(num_undetected):
+            undetected_engines.append(VirusTotalEngineResult(
+                engine_name=f"UndetectedEngine{i}",
+                detected=False,
+                result=None,
+                category=draw(st.sampled_from(["undetected", "harmless"])),
+                engine_version=draw(st.one_of(st.none(), st.text(min_size=1, max_size=20))),
+                engine_update=draw(st.one_of(st.none(), st.text(min_size=1, max_size=20)))
+            ))
+        
+        engine_results = detected_engines + undetected_engines
+    
+    # Generate legacy detections dictionary that is consistent with detection_count
+    detections = {}
+    generate_detections = draw(st.booleans())
+    
+    # If we have detections but no engine_results, we must generate detections
+    # If we have no engine_results and detection_count > 0, we must generate detections
+    if (detection_count > 0 and not generate_engine_results) or generate_detections:
+        # Generate exactly detection_count detected entries
+        for i in range(detection_count):
+            engine_name = f"LegacyEngine{i}"
+            detections[engine_name] = {
+                'detected': True,
+                'result': draw(st.text(min_size=1, max_size=50)),
+                'category': draw(st.sampled_from(["malicious", "suspicious"])),
+                'engine_name': engine_name
+            }
+        
+        # Add some undetected entries
+        num_undetected = draw(st.integers(min_value=0, max_value=min(5, total_engines - detection_count)))
+        for i in range(num_undetected):
+            engine_name = f"LegacyUndetected{i}"
+            detections[engine_name] = {
+                'detected': False,
+                'result': None,
+                'category': draw(st.sampled_from(["undetected", "harmless"])),
+                'engine_name': engine_name
+            }
+    
+    # Generate raw response
+    raw_response = None
+    if draw(st.booleans()):
+        raw_response = {
+            "id": draw(st.text(min_size=32, max_size=64)),
+            "type": "file",
+            "attributes": {
+                "last_analysis_stats": {
+                    "malicious": stats.malicious if stats else draw(st.integers(min_value=0, max_value=detection_count)),
+                    "suspicious": stats.suspicious if stats else max(0, detection_count - (stats.malicious if stats else 0)),
+                    "undetected": stats.undetected if stats else draw(st.integers(min_value=0, max_value=total_engines - detection_count)),
+                    "harmless": stats.harmless if stats else max(0, total_engines - detection_count - (stats.undetected if stats else 0))
+                },
+                "first_submission_date": draw(st.integers(min_value=1000000000, max_value=2000000000)),
+                "times_submitted": draw(st.integers(min_value=1, max_value=1000)),
+                "reputation": draw(st.integers(min_value=-100, max_value=100))
+            }
+        }
+    
     return VirusTotalResult(
         hash_value=draw(st.text(min_size=32, max_size=64)),
-        detection_count=draw(st.integers(min_value=0, max_value=100)),
-        total_engines=draw(st.integers(min_value=1, max_value=100)),
+        detection_count=detection_count,
+        total_engines=total_engines,
         scan_date=draw(st.one_of(st.none(), st.datetimes())),
         permalink=draw(st.one_of(st.none(), st.text(min_size=10, max_size=200))),
-        detections=draw(st.dictionaries(st.text(), st.dictionaries(st.text(), st.text())))
+        detections=detections,
+        stats=stats,
+        engine_results=engine_results,
+        raw_response=raw_response
     )
 
 
@@ -216,7 +327,8 @@ def threat_intelligence_strategy(draw):
     return ThreatIntelligence(
         virustotal_result=draw(st.one_of(st.none(), virustotal_result_strategy())),
         cached=draw(st.booleans()),
-        query_timestamp=draw(st.datetimes())
+        query_timestamp=draw(st.datetimes()),
+        analysis_type=draw(st.sampled_from(["full_boot_sector", "boot_code_only"]))
     )
 
 
@@ -953,3 +1065,461 @@ class TestReportGeneratorProperties:
                 
                 # Should contain hex offsets in HTML
                 assert "0x0000" in html_report
+
+    @given(analysis_result_strategy())
+    def test_virustotal_response_inclusion(self, analysis_result):
+        """
+        Property 60: VirusTotal response inclusion
+        **Validates: Requirements 5.7**
+        
+        For any analysis result with VirusTotal data, all report formats should include
+        complete VirusTotal response information including stats, engine results, and raw response.
+        """
+        generator = ReportGenerator()
+        
+        # Skip if no threat intelligence or VirusTotal result
+        if (not analysis_result.threat_intelligence or 
+            not analysis_result.threat_intelligence.virustotal_result):
+            return
+        
+        vt_result = analysis_result.threat_intelligence.virustotal_result
+        
+        # Test human-readable format
+        human_report = generator.generate_report(analysis_result, "human")
+        
+        # Should include threat intelligence section
+        assert "THREAT INTELLIGENCE" in human_report
+        
+        # Should include analysis type indicator
+        analysis_type = getattr(analysis_result.threat_intelligence, 'analysis_type', 'full_boot_sector')
+        if analysis_type == "boot_code_only":
+            assert "Boot Code Only" in human_report
+        else:
+            assert "Full Boot Sector" in human_report
+        
+        # Should include detection count and total engines
+        assert f"{vt_result.detection_count}/{vt_result.total_engines}" in human_report
+        
+        # Should include enhanced statistics if available
+        if vt_result.stats:
+            assert "Scan Statistics:" in human_report
+            assert f"Malicious: {vt_result.stats.malicious}" in human_report
+            assert f"Suspicious: {vt_result.stats.suspicious}" in human_report
+            assert f"Undetected: {vt_result.stats.undetected}" in human_report
+            assert f"Harmless: {vt_result.stats.harmless}" in human_report
+        
+        # Should include detection ratio analysis if there are detections
+        if vt_result.total_engines > 0:
+            detection_ratio = vt_result.detection_count / vt_result.total_engines
+            if detection_ratio == 0:
+                # Enhanced negative result display
+                assert "CLEAN RESULT" in human_report
+            elif detection_ratio >= 0.5:
+                assert "HIGH DETECTION RATIO" in human_report
+            elif detection_ratio >= 0.2:
+                assert "MODERATE DETECTION RATIO" in human_report
+            else:
+                assert "LOW DETECTION RATIO" in human_report
+        
+        # Should include additional metadata from raw response if available
+        if vt_result.raw_response and isinstance(vt_result.raw_response, dict):
+            attributes = vt_result.raw_response.get('attributes', {})
+            if attributes.get('first_submission_date'):
+                assert "First Seen:" in human_report
+            if attributes.get('times_submitted'):
+                assert "Times Submitted:" in human_report
+            if attributes.get('reputation') is not None:
+                assert "Reputation Score:" in human_report
+        
+        # Test JSON format
+        json_report = generator.generate_report(analysis_result, "json")
+        import json
+        report_data = json.loads(json_report)
+        
+        # Should have threat intelligence section
+        assert "threat_intelligence" in report_data
+        threat_intel = report_data["threat_intelligence"]
+        
+        # Should have VirusTotal data
+        assert "virustotal" in threat_intel
+        vt_data = threat_intel["virustotal"]
+        
+        # Should include all basic fields
+        assert "detection_count" in vt_data
+        assert "total_engines" in vt_data
+        assert "hash_value" in vt_data
+        assert vt_data["detection_count"] == vt_result.detection_count
+        assert vt_data["total_engines"] == vt_result.total_engines
+        assert vt_data["hash_value"] == vt_result.hash_value
+        
+        # Should include enhanced statistics if available
+        if vt_result.stats:
+            assert "stats" in vt_data
+            stats_data = vt_data["stats"]
+            assert stats_data["malicious"] == vt_result.stats.malicious
+            assert stats_data["suspicious"] == vt_result.stats.suspicious
+            assert stats_data["undetected"] == vt_result.stats.undetected
+            assert stats_data["harmless"] == vt_result.stats.harmless
+        
+        # Should include engine results if available
+        if vt_result.engine_results:
+            assert "engine_results" in vt_data
+            engine_data = vt_data["engine_results"]
+            assert len(engine_data) == len(vt_result.engine_results)
+            
+            for i, engine_result in enumerate(vt_result.engine_results):
+                assert engine_data[i]["engine_name"] == engine_result.engine_name
+                assert engine_data[i]["detected"] == engine_result.detected
+                assert engine_data[i]["category"] == engine_result.category
+        
+        # Should include raw response if available
+        if vt_result.raw_response:
+            assert "raw_response" in vt_data
+            assert vt_data["raw_response"] == vt_result.raw_response
+        
+        # Should include detection ratio
+        if vt_result.total_engines > 0:
+            assert "detection_ratio" in vt_data
+            expected_ratio = vt_result.detection_count / vt_result.total_engines
+            assert abs(vt_data["detection_ratio"] - expected_ratio) < 0.001
+        
+        # Should include analysis type
+        assert "analysis_type" in threat_intel
+        assert threat_intel["analysis_type"] in ["full_boot_sector", "boot_code_only"]
+
+    @given(analysis_result_strategy())
+    def test_virustotal_detection_results_display(self, analysis_result):
+        """
+        Property 63: VirusTotal detection results display
+        **Validates: Requirements 5.10**
+        
+        For any analysis result with VirusTotal detections, reports should display
+        detection results, scan statistics, and vendor-specific findings clearly.
+        """
+        generator = ReportGenerator()
+        
+        # Skip if no threat intelligence or VirusTotal result
+        if (not analysis_result.threat_intelligence or 
+            not analysis_result.threat_intelligence.virustotal_result):
+            return
+        
+        vt_result = analysis_result.threat_intelligence.virustotal_result
+        
+        # Skip if no detections to display
+        if vt_result.detection_count == 0:
+            return
+        
+        # Test human-readable format
+        human_report = generator.generate_report(analysis_result, "human")
+        
+        # Should include detection results section
+        assert "Detection Results:" in human_report
+        
+        # Should display individual engine detections
+        detected_count = 0
+        if vt_result.engine_results:
+            # Use enhanced engine results
+            for engine_result in vt_result.engine_results:
+                if engine_result.detected:
+                    detected_count += 1
+                    # Should show engine name
+                    assert engine_result.engine_name in human_report
+                    # Should show detection result if available
+                    if engine_result.result:
+                        assert engine_result.result in human_report
+                    # Should show category
+                    assert engine_result.category in human_report
+        else:
+            # Fall back to legacy detections
+            for engine, detection in vt_result.detections.items():
+                if detection.get("detected"):
+                    detected_count += 1
+                    assert engine in human_report
+                    if detection.get('result'):
+                        assert detection['result'] in human_report
+        
+        # Should have found at least some detections if detection_count > 0
+        if vt_result.detection_count > 0:
+            assert detected_count > 0
+        
+        # Should include scan statistics if available
+        if vt_result.stats:
+            stats = vt_result.stats
+            assert f"Malicious: {stats.malicious}" in human_report
+            assert f"Suspicious: {stats.suspicious}" in human_report
+            assert f"Undetected: {stats.undetected}" in human_report
+            assert f"Harmless: {stats.harmless}" in human_report
+        
+        # Test JSON format
+        json_report = generator.generate_report(analysis_result, "json")
+        import json
+        report_data = json.loads(json_report)
+        
+        # Should have VirusTotal data with detection information
+        vt_data = report_data["threat_intelligence"]["virustotal"]
+        
+        # Should include detection count and total engines
+        assert vt_data["detection_count"] == vt_result.detection_count
+        assert vt_data["total_engines"] == vt_result.total_engines
+        
+        # Should include detections dictionary
+        assert "detections" in vt_data
+        assert vt_data["detections"] == vt_result.detections
+        
+        # Should include enhanced engine results if available
+        if vt_result.engine_results:
+            assert "engine_results" in vt_data
+            engine_data = vt_data["engine_results"]
+            
+            # Should have same number of engine results
+            assert len(engine_data) == len(vt_result.engine_results)
+            
+            # Should include all engine result fields
+            for i, engine_result in enumerate(vt_result.engine_results):
+                json_engine = engine_data[i]
+                assert json_engine["engine_name"] == engine_result.engine_name
+                assert json_engine["detected"] == engine_result.detected
+                assert json_engine["result"] == engine_result.result
+                assert json_engine["category"] == engine_result.category
+                assert json_engine["engine_version"] == engine_result.engine_version
+                assert json_engine["engine_update"] == engine_result.engine_update
+        
+        # Should include enhanced statistics if available
+        if vt_result.stats:
+            assert "stats" in vt_data
+            stats_data = vt_data["stats"]
+            assert stats_data["malicious"] == vt_result.stats.malicious
+            assert stats_data["suspicious"] == vt_result.stats.suspicious
+            assert stats_data["undetected"] == vt_result.stats.undetected
+            assert stats_data["harmless"] == vt_result.stats.harmless
+            assert stats_data["timeout"] == vt_result.stats.timeout
+            assert stats_data["confirmed_timeout"] == vt_result.stats.confirmed_timeout
+            assert stats_data["failure"] == vt_result.stats.failure
+            assert stats_data["type_unsupported"] == vt_result.stats.type_unsupported
+
+    @given(analysis_result_strategy())
+    def test_dual_virustotal_analysis_reporting(self, analysis_result):
+        """
+        Property 64: Dual VirusTotal analysis reporting
+        **Validates: Requirements 5.11**
+        
+        For any analysis with VirusTotal support enabled, the Report_Generator should report 
+        both entire MBR and boot code region analyses separately, even when results are negative (0 detections).
+        """
+        # Feature: boot-sector-analyzer, Property 64: Dual VirusTotal analysis reporting
+        generator = ReportGenerator()
+        
+        # Skip if no threat intelligence
+        if not analysis_result.threat_intelligence:
+            return
+        
+        # Get available VirusTotal results
+        full_mbr_result = analysis_result.threat_intelligence.virustotal_result
+        boot_code_result = analysis_result.boot_code_threat_intelligence.virustotal_result if analysis_result.boot_code_threat_intelligence else None
+        
+        # Skip if we don't have at least one VirusTotal result
+        if not full_mbr_result and not boot_code_result:
+            return
+        
+        # Test human-readable format
+        human_report = generator.generate_report(analysis_result, "human")
+        
+        # Should have VirusTotal analysis section
+        assert "THREAT INTELLIGENCE" in human_report or "VirusTotal" in human_report
+        
+        # Should report analyses even if they have 0 detections
+        if full_mbr_result:
+            # Should show the full MBR analysis with detection ratio, even if 0 detections
+            assert f"{full_mbr_result.detection_count}/{full_mbr_result.total_engines}" in human_report
+            if full_mbr_result.detection_count == 0:
+                assert "No threats detected" in human_report or "Clean" in human_report or "0 detections" in human_report
+        
+        if boot_code_result:
+            # Should show the boot code analysis with detection ratio, even if 0 detections
+            assert f"{boot_code_result.detection_count}/{boot_code_result.total_engines}" in human_report
+            if boot_code_result.detection_count == 0:
+                assert "No threats detected" in human_report or "Clean" in human_report or "0 detections" in human_report
+        
+        # Test JSON format
+        json_report = generator.generate_report(analysis_result, "json")
+        import json
+        report_data = json.loads(json_report)
+        
+        # Should have threat intelligence section
+        assert "threat_intelligence" in report_data
+        
+        # Should have appropriate entries for available analyses
+        if full_mbr_result:
+            assert "virustotal" in report_data["threat_intelligence"]
+            full_vt_data = report_data["threat_intelligence"]["virustotal"]
+            assert "analysis_type" in report_data["threat_intelligence"]
+            # Should indicate the correct analysis type
+            analysis_type = report_data["threat_intelligence"]["analysis_type"]
+            assert analysis_type in ["full_boot_sector", "full_mbr", "boot_code_only"]
+            
+            # Should include detection data even if 0 detections
+            assert "detection_count" in full_vt_data
+            assert "total_engines" in full_vt_data
+            assert full_vt_data["detection_count"] == full_mbr_result.detection_count
+            assert full_vt_data["total_engines"] == full_mbr_result.total_engines
+        
+        if boot_code_result:
+            # Check if boot code analysis is in separate field or main threat intelligence
+            if "boot_code_threat_intelligence" in report_data:
+                boot_code_intel = report_data["boot_code_threat_intelligence"]
+                assert "virustotal" in boot_code_intel
+                boot_vt_data = boot_code_intel["virustotal"]
+                assert "analysis_type" in boot_code_intel
+                assert boot_code_intel["analysis_type"] == "boot_code_only"
+            else:
+                # Boot code analysis might be in main threat intelligence if it's the only one
+                boot_vt_data = report_data["threat_intelligence"]["virustotal"]
+                assert report_data["threat_intelligence"]["analysis_type"] == "boot_code_only"
+            
+            # Should include detection data even if 0 detections
+            assert "detection_count" in boot_vt_data
+            assert "total_engines" in boot_vt_data
+            assert boot_vt_data["detection_count"] == boot_code_result.detection_count
+            assert boot_vt_data["total_engines"] == boot_code_result.total_engines
+        
+        # Test HTML format
+        html_report = generator.generate_report(analysis_result, "html")
+        
+        # Should have VirusTotal section in HTML
+        assert "VirusTotal" in html_report or "virustotal" in html_report
+        
+        # Should show detection ratios for available analyses, even if 0
+        if full_mbr_result:
+            assert f"{full_mbr_result.detection_count}/{full_mbr_result.total_engines}" in html_report
+        
+        if boot_code_result:
+            assert f"{boot_code_result.detection_count}/{boot_code_result.total_engines}" in html_report
+    @given(analysis_result_strategy())
+    def test_negative_virustotal_result_inclusion(self, analysis_result):
+        """
+        Property 65: Negative VirusTotal result inclusion
+        **Validates: Requirements 5.12**
+        
+        For any VirusTotal analysis that returns negative results (clean/0 detections), 
+        the Report_Generator should still include the complete response data showing scan statistics and detection ratios.
+        """
+        # Feature: boot-sector-analyzer, Property 65: Negative VirusTotal result inclusion
+        generator = ReportGenerator()
+        
+        # Skip if no threat intelligence
+        if not analysis_result.threat_intelligence:
+            return
+        
+        vt_result = analysis_result.threat_intelligence.virustotal_result
+        
+        # Skip if no VirusTotal result
+        if not vt_result:
+            return
+        
+        # Only test negative results (0 detections)
+        if vt_result.detection_count > 0:
+            return
+        
+        # Test human-readable format
+        human_report = generator.generate_report(analysis_result, "human")
+        
+        # Should include threat intelligence section even for negative results
+        assert "THREAT INTELLIGENCE" in human_report
+        
+        # Should show detection ratio even when 0/X
+        assert f"{vt_result.detection_count}/{vt_result.total_engines}" in human_report
+        
+        # Should explicitly indicate clean/negative result
+        assert "No threats detected" in human_report or "Clean" in human_report or "0 detections" in human_report
+        
+        # Should include scan statistics if available, even for negative results
+        if vt_result.stats:
+            assert "Scan Statistics:" in human_report
+            assert f"Malicious: {vt_result.stats.malicious}" in human_report
+            assert f"Suspicious: {vt_result.stats.suspicious}" in human_report
+            assert f"Undetected: {vt_result.stats.undetected}" in human_report
+            assert f"Harmless: {vt_result.stats.harmless}" in human_report
+            
+            # For negative results, malicious + suspicious should be 0
+            assert vt_result.stats.malicious == 0
+            assert vt_result.stats.suspicious == 0
+        
+        # Should include additional metadata from raw response if available
+        if vt_result.raw_response and isinstance(vt_result.raw_response, dict):
+            attributes = vt_result.raw_response.get('attributes', {})
+            if attributes.get('first_submission_date'):
+                assert "First Seen:" in human_report
+            if attributes.get('times_submitted'):
+                assert "Times Submitted:" in human_report
+            if attributes.get('reputation') is not None:
+                assert "Reputation Score:" in human_report
+        
+        # Test JSON format
+        json_report = generator.generate_report(analysis_result, "json")
+        import json
+        report_data = json.loads(json_report)
+        
+        # Should have threat intelligence section
+        assert "threat_intelligence" in report_data
+        threat_intel = report_data["threat_intelligence"]
+        
+        # Should have VirusTotal data even for negative results
+        assert "virustotal" in threat_intel
+        vt_data = threat_intel["virustotal"]
+        
+        # Should include all basic fields even for negative results
+        assert "detection_count" in vt_data
+        assert "total_engines" in vt_data
+        assert "hash_value" in vt_data
+        assert vt_data["detection_count"] == 0  # Should be 0 for negative results
+        assert vt_data["total_engines"] == vt_result.total_engines
+        assert vt_data["hash_value"] == vt_result.hash_value
+        
+        # Should include detection ratio even when 0
+        if vt_result.total_engines > 0:
+            assert "detection_ratio" in vt_data
+            assert vt_data["detection_ratio"] == 0.0  # Should be 0.0 for negative results
+        
+        # Should include enhanced statistics if available, even for negative results
+        if vt_result.stats:
+            assert "stats" in vt_data
+            stats_data = vt_data["stats"]
+            assert stats_data["malicious"] == 0  # Should be 0 for negative results
+            assert stats_data["suspicious"] == 0  # Should be 0 for negative results
+            assert stats_data["undetected"] == vt_result.stats.undetected
+            assert stats_data["harmless"] == vt_result.stats.harmless
+            assert stats_data["timeout"] == vt_result.stats.timeout
+            assert stats_data["confirmed_timeout"] == vt_result.stats.confirmed_timeout
+            assert stats_data["failure"] == vt_result.stats.failure
+            assert stats_data["type_unsupported"] == vt_result.stats.type_unsupported
+        
+        # Should include raw response if available, even for negative results
+        if vt_result.raw_response:
+            assert "raw_response" in vt_data
+            assert vt_data["raw_response"] == vt_result.raw_response
+        
+        # Should include analysis type
+        assert "analysis_type" in threat_intel
+        assert threat_intel["analysis_type"] in ["full_boot_sector", "boot_code_only", "full_mbr"]
+        
+        # Test HTML format
+        html_report = generator.generate_report(analysis_result, "html")
+        
+        # Should include VirusTotal section in HTML even for negative results
+        assert "VirusTotal" in html_report or "virustotal" in html_report
+        
+        # Should show detection ratio in HTML even when 0/X
+        assert f"{vt_result.detection_count}/{vt_result.total_engines}" in html_report
+        
+        # Should have clean/negative result indicator in HTML
+        assert "Clean" in html_report or "No threats" in html_report or "0 detections" in html_report
+        
+        # Should include scan statistics in HTML if available
+        if vt_result.stats:
+            # HTML format uses span tags for formatting
+            assert f'<span class="stat-label">Malicious:</span>' in html_report
+            assert f'<span class="stat-value">{vt_result.stats.malicious}</span>' in html_report
+            assert f'<span class="stat-label">Suspicious:</span>' in html_report
+            assert f'<span class="stat-value">{vt_result.stats.suspicious}</span>' in html_report
+            assert f"Undetected: {vt_result.stats.undetected}" in html_report
+            assert f"Harmless: {vt_result.stats.harmless}" in html_report
